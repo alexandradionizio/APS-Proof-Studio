@@ -3,7 +3,13 @@ let apsPreviewWindow=null;
 
 function broadcastPreviewState(){
   try{
-    apsPreviewChannel?.postMessage({type:'STATE',state:deep(state),sentAt:Date.now()});
+    const fonts=(typeof getPreviewFontPayload==='function')?getPreviewFontPayload():[];
+    apsPreviewChannel?.postMessage({
+      type:'STATE',
+      state:deep(state),
+      fonts,
+      sentAt:Date.now()
+    });
   }catch(e){console.warn('Preview sync failed',e)}
 }
 
