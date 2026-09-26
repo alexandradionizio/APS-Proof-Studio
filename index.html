@@ -7,28 +7,61 @@
   <link rel="stylesheet" href="assets/css/ui.css">
   <link rel="stylesheet" href="assets/css/pdf.css">
   <link rel="stylesheet" href="assets/css/models.css">
+  <link rel="stylesheet" href="assets/css/studio.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="editor" id="editor">
-      <div class="brand-row">
+  <div class="studio-shell">
+    <aside class="studio-sidebar">
+      <div class="studio-brand">
         <div class="brand-mark">APS</div>
         <div>
-          <div class="brand-title">Proof Studio</div>
-          <div class="brand-sub">Versão pública • v0.17</div>
+          <div class="brand-title">APS Proof Studio</div>
+          <div class="brand-sub">v0.18 • Studio</div>
         </div>
       </div>
 
-      <div class="toolbar">
-        <button class="btn primary" id="printBtn">Gerar PDF</button>
-        <button class="btn" id="exportBtn">Salvar projeto</button>
-        <label class="btn file-btn">Abrir projeto<input id="importProjectInput" type="file" accept=".apsproof,.json" hidden></label>
-      </div>
-      <div class="save-note" id="saveNote">Salvamento automático local ativo</div>
+      <nav class="studio-nav" aria-label="Navegação do projeto">
+        <button class="nav-button active" data-view="project"><span class="nav-icon">01</span><span>Projeto</span></button>
+        <button class="nav-button art-only" data-view="models"><span class="nav-icon">02</span><span>Modelos</span></button>
+        <button class="nav-button art-only" data-view="composition"><span class="nav-icon">03</span><span>Fundo & composição</span></button>
+        <button class="nav-button art-only" data-view="identity"><span class="nav-icon">04</span><span>Identidade & elementos</span></button>
+        <button class="nav-button art-only" data-view="typography"><span class="nav-icon">05</span><span>Nome & numeração</span></button>
+        <button class="nav-button list-only" data-view="list"><span class="nav-icon">02</span><span>Lista de produção</span></button>
+        <button class="nav-button" data-view="final"><span class="nav-icon"><span class="art-only-inline">06</span><span class="list-only-inline">03</span></span><span>Conferência final</span></button>
+      </nav>
 
-      <details open class="panel">
-        <summary>01 • Projeto</summary>
-        <div class="panel-body grid-2">
+      <div class="studio-sidebar-spacer"></div>
+
+      <div class="sidebar-utilities">
+        <button class="btn primary full" id="printBtn">Gerar PDF da prova</button>
+        <div class="sidebar-file-actions">
+          <button class="btn ghost" id="exportBtn">Salvar projeto</button>
+          <label class="btn ghost file-btn">Abrir projeto<input id="importProjectInput" type="file" accept=".apsproof,.json" hidden></label>
+        </div>
+        <button class="btn ghost" id="loadSampleBtn">Carregar exemplo</button>
+        <button class="btn ghost danger" id="newProjectBtn">Novo projeto</button>
+      </div>
+    </aside>
+
+    <main class="studio-main">
+      <header class="studio-topbar">
+        <div class="topbar-heading">
+          <div class="topbar-kicker" id="topbarViewKicker">Informações gerais da prova</div>
+          <div class="topbar-title" id="topbarViewTitle">01. Projeto</div>
+        </div>
+        <div class="topbar-actions">
+          <div class="save-state" id="saveNote">Salvamento automático local ativo</div>
+          <button class="btn preview-btn" id="previewBtn">Visualizar prova ↗</button>
+        </div>
+      </header>
+
+      <div class="studio-content">
+        <section class="config-view active" data-view="project">
+          <div class="view-header">
+            <div class="view-heading"><h1>01. Projeto</h1><p>Informações gerais da prova</p></div>
+            <div class="view-chip">Projeto</div>
+          </div>
+          <div class="panel-body grid-2">
           <label class="field span-2">Tipo de prova
             <select id="modeInput">
               <option value="art">Prova de Arte</option>
@@ -55,11 +88,19 @@
             </select>
           </label>
         </div>
-      </details>
+          <div class="project-theme-box">
+            <h3>Tema do documento</h3>
+            <div class="panel-body grid-2">
+          <label class="field">Cor principal<input id="accentInput" type="color"></label>
+          <label class="field">Cor secundária<input id="accent2Input" type="color"></label>
+          <div class="span-2 theme-tip">As cores principal e secundária mudam as bordas, barras e selos do PDF.</div>
+        </div>
+          </div>
+        </section>
 
-      <details open class="panel art-only">
-        <summary>02 • Modelos do projeto</summary>
-        <div class="panel-body">
+        <section class="config-view art-only" data-view="models">
+          <div class="view-header"><div class="view-heading"><h1>02. Modelos</h1><p>Mockups e variações do projeto</p></div><div class="view-chip">Modelos</div></div>
+          <div class="panel-body">
           <div class="row-between">
             <div>
               <div class="section-mini-title">Mockups / variações</div>
@@ -69,11 +110,11 @@
           </div>
           <div id="modelsEditor" class="models-editor"></div>
         </div>
-      </details>
+        </section>
 
-      <details open class="panel art-only">
-        <summary>03 • Fundo & composição</summary>
-        <div class="panel-body">
+        <section class="config-view art-only" data-view="composition">
+          <div class="view-header"><div class="view-heading"><h1>03. Fundo & composição</h1><p>Texturas, cores e composição individual de cada modelo</p></div><div class="view-chip">Por modelo</div></div>
+          <div class="panel-body">
           <div class="model-selector-wrap">
             <span class="label-like">Modelo em edição</span>
             <select class="model-selector" id="compositionModelSelect"></select>
@@ -125,11 +166,11 @@
           <div id="paletteEditor" class="palette-editor"></div>
           <p class="microcopy">A paleta pertence ao modelo selecionado. Os botões 1 e 2 continuam definindo as cores do documento.</p>
         </div>
-      </details>
+        </section>
 
-      <details open class="panel art-only">
-        <summary>04 • Identidade & elementos</summary>
-        <div class="panel-body">
+        <section class="config-view art-only" data-view="identity">
+          <div class="view-header"><div class="view-heading"><h1>04. Identidade & elementos</h1><p>Escudo, patrocinadores, logos e aplicações</p></div><div class="view-chip">Identidade</div></div>
+          <div class="panel-body">
           <div class="model-selector-wrap">
             <span class="label-like">Modelo em edição</span>
             <select class="model-selector" id="identityModelSelect"></select>
@@ -174,11 +215,11 @@
             </div>
           </div>
         </div>
-      </details>
+        </section>
 
-      <details open class="panel art-only">
-        <summary>05 • Nome & numeração</summary>
-        <div class="panel-body grid-2">
+        <section class="config-view art-only" data-view="typography">
+          <div class="view-header"><div class="view-heading"><h1>05. Nome & numeração</h1><p>Fontes, caracteres e exemplos de personalização</p></div><div class="view-chip">Tipografia</div></div>
+          <div class="panel-body grid-2">
           <div class="model-selector-wrap span-2">
             <span class="label-like">Modelo em edição</span>
             <select class="model-selector" id="typographyModelSelect"></select>
@@ -210,21 +251,21 @@
             </label>
           </div>
         </div>
-      </details>
+        </section>
 
-      <details open class="panel list-only">
-        <summary>02 • Lista de produção</summary>
-        <div class="panel-body">
+        <section class="config-view list-only" data-view="list">
+          <div class="view-header"><div class="view-heading"><h1>02. Lista de produção</h1><p>Nomes, números, tamanhos e observações</p></div><div class="view-chip">Lista</div></div>
+          <div class="panel-body">
           <div class="row-between"><div class="section-mini-title">Itens da lista</div><button class="btn small-btn" id="addListRowBtn">+ Linha</button></div>
           <div id="listEditor" class="list-editor"></div>
           <button class="btn ghost full mt-10" id="pasteListBtn">Colar lista em texto</button>
           <textarea id="pasteListArea" class="paste-area" rows="5" placeholder="Cole linhas no formato: Nome | Nº | Tamanho | Observação"></textarea>
         </div>
-      </details>
+        </section>
 
-      <details open class="panel">
-        <summary><span class="art-only-inline">06</span><span class="list-only-inline">03</span> • Conferência final</summary>
-        <div class="panel-body">
+        <section class="config-view" data-view="final">
+          <div class="view-header"><div class="view-heading"><h1><span class="art-only-inline">06.</span><span class="list-only-inline">03.</span> Conferência final</h1><p>Checklist, responsável e referência da aprovação</p></div><div class="view-chip">Finalização</div></div>
+          <div class="panel-body">
           <div class="section-mini-title">Checklist do documento</div>
           <div id="checklistEditor" class="checklist-editor"></div>
           <button class="btn small-btn mt-10" id="addChecklistBtn">+ Item</button>
@@ -232,42 +273,24 @@
           <label class="field">Aprovado por (opcional)<input id="approvedByInput" type="text" placeholder="Nome do responsável"></label>
           <label class="field mt-8">Referência da aprovação<input id="approvalRefInput" type="text" placeholder="Ex.: WhatsApp / e-mail / pedido nº..."></label>
         </div>
-      </details>
-
-      <details class="panel" open>
-        <summary>Tema do documento</summary>
-        <div class="panel-body grid-2">
-          <label class="field">Cor principal<input id="accentInput" type="color"></label>
-          <label class="field">Cor secundária<input id="accent2Input" type="color"></label>
-          <div class="span-2 theme-tip">As cores principal e secundária mudam as bordas, barras e selos do PDF.</div>
-        </div>
-      </details>
-
-      <div class="danger-zone">
-        <button class="btn ghost" id="loadSampleBtn">Carregar exemplo</button>
-        <button class="btn ghost danger" id="newProjectBtn">Novo projeto</button>
-      </div>
-    </aside>
-
-    <main class="workspace">
-      <div class="preview-topbar">
-        <div>
-          <strong>Pré-visualização</strong>
-          <span id="pageCountLabel"></span>
-        </div>
-        <div class="preview-note">O PDF usa exatamente este layout A4.</div>
-      </div>
-      <div class="preview-wrap" id="previewWrap">
-        <div id="preview" class="preview"></div>
+        </section>
       </div>
     </main>
   </div>
+
+  <div class="compat-preview" aria-hidden="true">
+    <span id="pageCountLabel"></span>
+    <div id="preview"></div>
+  </div>
   <input id="imagePicker" type="file" accept="image/*" hidden>
+
   <script src="assets/js/state.js"></script>
   <script src="assets/js/editor.js"></script>
   <script src="assets/js/pdf.js"></script>
   <script src="assets/js/fonts.js"></script>
   <script src="assets/js/bindings.js"></script>
   <script src="assets/js/media.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/preview-bridge.js"></script>
 </body>
 </html>
