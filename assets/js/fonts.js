@@ -15,6 +15,17 @@ function fontBlobKey(model,role){
   return `fontblob:${model.id}:${role}`;
 }
 
+function isArrayBufferLike(value){
+  return !!value && typeof value.byteLength==='number' && Object.prototype.toString.call(value)==='[object ArrayBuffer]';
+}
+
+async function fontSourceToBuffer(source){
+  if(source instanceof Blob) return await source.arrayBuffer();
+  if(isArrayBufferLike(source)) return source.slice ? source.slice(0) : new Uint8Array(source).slice().buffer;
+  if(ArrayBuffer.isView(source)) return source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength);
+  return null;
+}
+
 function fontTokenHash(value=''){
   let h=2166136261;
   for(let i=0;i<value.length;i++){
@@ -61,25 +72,34 @@ function populateFontSelectors(){
   xs.innerHTML=opts('number');
 }
 
-async function registerFontBlob(model,role,blob,identity=''){
-  if(!(blob instanceof Blob) || !model) return false;
+async function registerFontSource(model,role,source,identity=''){
+  if(!model) return false;
+  const buffer=await fontSourceToBuffer(source);
+  if(!buffer) return false;
+
   const key=`${model.id}:${role}`;
   const token=identity||model[`${role}FontPostscript`]||model[`${role}FontFullName`]||model[`${role}FontFamily`]||key;
   const alias=`APS_${model.id.replace(/[^a-z0-9]/gi,'')}_${role}_${fontTokenHash(token)}`;
 
   clearLoadedFont(key);
 
-  const buffer=await blob.arrayBuffer();
   const face=new FontFace(alias,buffer);
   await face.load();
   document.fonts.add(face);
   loadedFontFaces.set(key,face);
   fontAliases.set(key,alias);
-  fontTransferCache.set(key,{blob,identity:token});
+
+  const blob=source instanceof Blob ? source : new Blob([buffer],{type:'font/ttf'});
+  fontTransferCache.set(key,{blob,buffer,identity:token});
 
   await document.fonts.load(`32px "${alias}"`);
   await document.fonts.ready;
-  return true;
+
+  return document.fonts.check(`32px "${alias}"`);
+}
+
+async function registerFontBlob(model,role,blob,identity=''){
+  return registerFontSource(model,role,blob,identity);
 }
 
 function getPreviewFontPayload(){
@@ -88,11 +108,12 @@ function getPreviewFontPayload(){
     for(const role of ['name','number']){
       const key=`${model.id}:${role}`;
       const cached=fontTransferCache.get(key);
-      if(cached?.blob instanceof Blob){
+      if(cached?.blob instanceof Blob || cached?.buffer){
         payload.push({
           modelId:model.id,
           role,
-          blob:cached.blob,
+          blob:cached.blob instanceof Blob ? cached.blob : null,
+          buffer:cached.buffer||null,
           identity:cached.identity||''
         });
       }
@@ -102,15 +123,19 @@ function getPreviewFontPayload(){
 }
 
 async function installPreviewFontPayload(payload=[]){
+  let installed=0;
   for(const item of payload){
     const model=getModel(item?.modelId);
-    if(!model || !['name','number'].includes(item?.role) || !(item?.blob instanceof Blob)) continue;
+    if(!model || !['name','number'].includes(item?.role)) continue;
+    const source=item.buffer||item.blob;
+    if(!source) continue;
     try{
-      await registerFontBlob(model,item.role,item.blob,item.identity||'');
+      if(await registerFontSource(model,item.role,source,item.identity||'')) installed++;
     }catch(e){
       console.warn('Falha ao receber fonte do painel',e);
     }
   }
+  return installed;
 }
 
 async function loadFontFace(model,role){
@@ -165,7 +190,7 @@ async function loadFontFace(model,role){
       return false;
     }
 
-    return await registerFontBlob(model,role,blob,identity);
+    return await registerFontSource(model,role,blob,identity);
   }catch(e){
     console.warn('Falha ao aplicar fonte local',e);
     clearLoadedFont(key);
