@@ -18,7 +18,36 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
     stack.push('"Arial Black"','Impact','sans-serif');
     return stack.join(',');
   }
-  function typographyPage(model,n){if(!model.isMain&&model.inheritTypography)return null;const src=typographySource(model),nf=esc(src.nameFontFullName||src.nameFontFamily||'Fonte padrão do sistema'),xf=esc(src.numberFontFullName||src.numberFontFamily||'Fonte padrão do sistema'),body=`<div class="font-summary"><div><b>FONTE DO NOME</b><span>${nf}</span></div><div><b>FONTE DO NÚMERO</b><span>${xf}</span></div></div><div class="typography-grid"><div class="type-card"><div class="type-label">Caracteres / nome</div><div class="type-preview alpha" style="font-family:${fontCss(src,'name')}!important;font-synthesis:none">${esc(src.alphabet)}</div></div><div class="type-card"><div class="type-label">Numeração completa</div><div class="type-preview numbers" style="font-family:${fontCss(src,'number')}!important;font-synthesis:none">${esc(src.numbers)}</div></div><div class="type-card"><div class="type-label">Exemplo de nome</div><div class="type-preview sample-name" style="font-family:${fontCss(src,'name')}!important;font-synthesis:none">${esc(src.nameSample)}</div></div><div class="type-card"><div class="type-label">Exemplo de número</div><div class="type-preview sample-number" style="font-family:${fontCss(src,'number')}!important;font-synthesis:none">${esc(src.numberSample)}</div></div></div>`;return pageWrap(n,'NOME & NUMERAÇÃO','Amostra visual da personalização antes da modelagem da grade',body)}
+  function typographyPage(model,n){
+    if(!model.isMain&&model.inheritTypography)return null;
+    const src=typographySource(model),
+      nf=esc(src.nameFontFullName||src.nameFontFamily||'Fonte padrão do sistema'),
+      xf=esc(src.numberFontFullName||src.numberFontFamily||'Fonte padrão do sistema'),
+      mid=esc(src.id||model.id);
+    const body=`<div class="font-summary"><div><b>FONTE DO NOME</b><span>${nf}</span></div><div><b>FONTE DO NÚMERO</b><span>${xf}</span></div></div>
+      <div class="typography-grid">
+        <div class="type-card"><div class="type-label">Caracteres / nome</div><div class="type-preview alpha name-font" data-font-model="${mid}" data-font-role="name">${esc(src.alphabet)}</div></div>
+        <div class="type-card"><div class="type-label">Numeração completa</div><div class="type-preview numbers number-font" data-font-model="${mid}" data-font-role="number">${esc(src.numbers)}</div></div>
+        <div class="type-card"><div class="type-label">Exemplo de nome</div><div class="type-preview sample-name name-font" data-font-model="${mid}" data-font-role="name">${esc(src.nameSample)}</div></div>
+        <div class="type-card"><div class="type-label">Exemplo de número</div><div class="type-preview sample-number number-font" data-font-model="${mid}" data-font-role="number">${esc(src.numberSample)}</div></div>
+      </div>`;
+    return pageWrap(n,'NOME & NUMERAÇÃO','Amostra visual da personalização antes da modelagem da grade',body);
+  }
+
+  function applyRenderedFontAliases(){
+    $('[data-font-model][data-font-role]',$('#preview')).forEach(el=>{
+      const modelId=el.dataset.fontModel,role=el.dataset.fontRole;
+      const alias=fontAliases.get(`${modelId}:${role}`);
+      const model=getModel(modelId);
+      if(alias){
+        el.style.setProperty('font-family',`"${alias}"`,'important');
+        el.style.setProperty('font-synthesis','none');
+      }else if(model){
+        el.style.setProperty('font-family',fontCss(model,role),'important');
+        el.style.setProperty('font-synthesis','none');
+      }
+    });
+  }
   function listPages(start){const rows=state.listRows.length?state.listRows:[{name:'',number:'',size:'',obs:''}],chunks=[];for(let i=0;i<rows.length;i+=18)chunks.push(rows.slice(i,i+18));return chunks.map((c,idx)=>pageWrap(start+idx,idx===0?'LISTA DE PRODUÇÃO':'LISTA • CONTINUAÇÃO',idx===0?'Nomes, números, tamanhos e observações para conferência':'Continuação da lista cadastrada',`<table class="list-table"><thead><tr><th>Nome</th><th>Nº</th><th>Tamanho</th><th>Observação</th></tr></thead><tbody>${c.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.number)}</td><td>${esc(r.size)}</td><td>${esc(r.obs)}</td></tr>`).join('')}</tbody></table><div class="list-summary">Itens cadastrados: ${state.listRows.length}</div>`))}
   function approvalPage(n){const items=getChecklist().map(x=>`<div class="checklist-item"><span class="check-box"></span><span>${esc(x)}</span></div>`).join(''),text=state.mode==='art'?'Ao aprovar esta prova de arte, o cliente confirma que conferiu e está de acordo com o visual apresentado, incluindo os modelos, cores, escudo, logotipos, patrocinadores, posicionamentos, fundos, composições, nomes e numerações.':'Ao aprovar este documento, o cliente confirma a conferência dos nomes, números, tamanhos, quantidades e observações apresentados nesta lista.',important=state.mode==='art'?`<div class="final-important"><b>IMPORTANTE</b>Revise atentamente todos os modelos e elementos desta prova antes de aprovar. Após a aprovação, esta versão será considerada a referência visual autorizada para continuidade do projeto.</div>`:'';return pageWrap(n,'CONFERÊNCIA FINAL','Checklist do documento antes da liberação para a próxima etapa',`<div class="checklist">${items}</div>${important}<div class="approval-panel"><h3>APROVAÇÃO</h3><p>${text}</p><div class="approval-meta"><div><div class="approval-line">${state.approvedBy?`<span style="font-size:8pt">${esc(state.approvedBy)}</span>`:''}</div><div class="approval-label">Responsável pela aprovação</div></div><div><div class="approval-line">${state.approvalRef?`<span style="font-size:8pt">${esc(state.approvalRef)}</span>`:''}</div><div class="approval-label">Referência / data da aprovação</div></div></div></div>`,`<div class="status-stamp">${esc(state.status)}</div>`)}
-  function renderPreview(){let pages=[coverPage()],n=2;if(state.mode==='art'){state.models.forEach(m=>pages.push(modelProofPage(m,n++)));state.models.forEach(m=>pages.push(compositionPage(m,n++)));for(const m of state.models){const ids=identityPagesForModel(m,n);pages.push(...ids);n+=ids.length}for(const m of state.models){const tp=typographyPage(m,n);if(tp){pages.push(tp);n++}}}else{const ls=listPages(n);pages.push(...ls);n+=ls.length}pages.push(approvalPage(n++));$('#preview').innerHTML=pages.join('');$('#pageCountLabel').textContent=`• ${pages.length} páginas`;document.title=`${(state.team||'Projeto').replace(/[^\wÀ-ÿ -]/g,'').trim()}_${state.mode==='art'?'PROVA_ARTE':'PROVA_LISTA'}_${state.version||'V01'}`}
+  function renderPreview(){let pages=[coverPage()],n=2;if(state.mode==='art'){state.models.forEach(m=>pages.push(modelProofPage(m,n++)));state.models.forEach(m=>pages.push(compositionPage(m,n++)));for(const m of state.models){const ids=identityPagesForModel(m,n);pages.push(...ids);n+=ids.length}for(const m of state.models){const tp=typographyPage(m,n);if(tp){pages.push(tp);n++}}}else{const ls=listPages(n);pages.push(...ls);n+=ls.length}pages.push(approvalPage(n++));$('#preview').innerHTML=pages.join('');applyRenderedFontAliases();$('#pageCountLabel').textContent=`• ${pages.length} páginas`;document.title=`${(state.team||'Projeto').replace(/[^\wÀ-ÿ -]/g,'').trim()}_${state.mode==='art'?'PROVA_ARTE':'PROVA_LISTA'}_${state.version||'V01'}`}
