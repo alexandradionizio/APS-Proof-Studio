@@ -77,6 +77,7 @@ async function applyIncomingState(nextState,fontPayload=[]){
 
   // Reaplica os aliases somente depois de as FontFace estarem realmente prontas.
   applyRenderedFontAliases();
+  requestAnimationFrame(()=>{ if(typeof renderTypographyCanvases==='function') renderTypographyCanvases(); });
 
   if(expected){
     const ok=result.installed;
