@@ -79,4 +79,10 @@ if(saveNote){
   obs.observe(saveNote,{childList:true,characterData:true,subtree:true});
 }
 
+apsPreviewChannel?.addEventListener('message',e=>{
+  if(e.data?.type==='PREVIEW_READY'){
+    broadcastPreviewState();
+  }
+});
+
 window.addEventListener('beforeunload',()=>apsPreviewChannel?.close());
