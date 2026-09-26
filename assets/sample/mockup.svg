@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900">
+  <defs>
+    <pattern id="p" width="80" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="80" height="80" fill="#f4f3ef"/><rect width="22" height="80" fill="#e9e6df"/>
+    </pattern>
+  </defs>
+  <rect width="1400" height="900" fill="#ffffff"/>
+  <text x="70" y="90" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111">AURORA FC • MODELO DE LINHA</text>
+  <g transform="translate(110 150)">
+    <path d="M160 30 L270 0 L350 70 L300 155 L255 120 L255 555 L65 555 L65 120 L20 155 L-30 70 L50 0 Z" fill="url(#p)" stroke="#111" stroke-width="8"/>
+    <path d="M92 0 Q160 75 228 0" fill="none" stroke="#111" stroke-width="16"/>
+    <path d="M148 150 h24 v90 h-24z" fill="#c9952f"/>
+    <text x="160" y="330" text-anchor="middle" font-family="Arial Black, Arial" font-size="90" fill="#111">10</text>
+    <text x="160" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#555">FRENTE</text>
+  </g>
+  <g transform="translate(760 150)">
+    <path d="M160 30 L270 0 L350 70 L300 155 L255 120 L255 555 L65 555 L65 120 L20 155 L-30 70 L50 0 Z" fill="#111" stroke="#111" stroke-width="8"/>
+    <path d="M92 0 Q160 75 228 0" fill="none" stroke="#c9952f" stroke-width="16"/>
+    <text x="160" y="290" text-anchor="middle" font-family="Arial Black, Arial" font-size="70" fill="#fff">ATLETA</text>
+    <text x="160" y="405" text-anchor="middle" font-family="Arial Black, Arial" font-size="120" fill="#c9952f">10</text>
+    <text x="160" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#bbb">COSTAS</text>
+  </g>
+  <g transform="translate(500 670)">
+    <rect width="400" height="120" rx="26" fill="#f4f3ef" stroke="#ddd"/>
+    <text x="200" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111">DEMO NEUTRA</text>
+    <text x="200" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#666">Sem marcas ou dados de clientes</text>
+  </g>
+</svg>
