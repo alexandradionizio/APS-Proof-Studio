@@ -28,12 +28,22 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
     </article>`;
   }
 
-  function identityPageWrap(model,n,items,continued=false){
+  function identityPageWrap(model,n,{crest=null,items=[]}={},continued=false){
     const title=continued?'IDENTIDADE & ELEMENTOS • CONTINUAÇÃO':'IDENTIDADE & ELEMENTOS';
     const subtitle=continued
-      ?`Continuação dos elementos cadastrados em ${model.name||'MODELO'}`
-      :`Escudo, patrocinadores, logos e demais aplicações • ${model.name||'MODELO'}`;
-    const body=`<div class="identity-grid">${items.map(identityGridCardMarkup).join('')}</div>`;
+      ?`Continuação dos patrocinadores e demais elementos • ${model.name||'MODELO'}`
+      :`Escudo central + patrocinadores e demais aplicações • ${model.name||'MODELO'}`;
+
+    const crestMarkup=crest
+      ?`<div class="identity-crest-zone">${identityGridCardMarkup(crest)}</div>`
+      :'';
+
+    const itemsMarkup=items.length
+      ?`<div class="identity-elements-grid">${items.map(identityGridCardMarkup).join('')}</div>`
+      :'';
+
+    const body=`<div class="identity-layout">${crestMarkup}${itemsMarkup}</div>`;
+
     return `<section class="pdf-page identity-page" style="--p-accent:${state.accent};--p-accent2:${state.accent2}">
       ${pageHeader(n)}
       <div class="pdf-body">
@@ -48,21 +58,35 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
     if(!model.isMain&&model.inheritIdentity)return [];
 
     const src=identitySource(model);
-    const entries=[
-      {kind:'crest',scope:'top',data:src.crest},
+    const crest={kind:'crest',scope:'top',data:src.crest};
+    const elements=[
       ...src.elements.map(e=>({kind:'element',scope:'top',data:e}))
     ];
 
     if(model.includeBottom){
-      src.bottomElements.forEach(e=>entries.push({kind:'element',scope:'bottom',data:e}));
+      src.bottomElements.forEach(e=>elements.push({kind:'element',scope:'bottom',data:e}));
     }
 
-    if(!entries.length)return [];
+    const pages=[];
 
-    const chunks=[];
-    for(let i=0;i<entries.length;i+=4)chunks.push(entries.slice(i,i+4));
+    // O escudo é sempre independente, centralizado no topo.
+    // Na primeira página entram no máximo dois elementos abaixo dele.
+    const firstItems=elements.slice(0,2);
+    pages.push(identityPageWrap(model,start,{crest,items:firstItems},false));
 
-    return chunks.map((chunk,idx)=>identityPageWrap(model,start+idx,chunk,idx>0));
+    // As páginas seguintes ficam somente com os elementos, quatro por página.
+    // A grade mantém dois por linha e centraliza qualquer último item ímpar.
+    const remaining=elements.slice(2);
+    for(let i=0;i<remaining.length;i+=4){
+      pages.push(identityPageWrap(
+        model,
+        start+pages.length,
+        {crest:null,items:remaining.slice(i,i+4)},
+        true
+      ));
+    }
+
+    return pages;
   }
   function fontCss(model,role){
     const key=`${model.id}:${role}`,alias=fontAliases.get(key);
