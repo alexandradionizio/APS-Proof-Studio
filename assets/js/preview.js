@@ -23,9 +23,12 @@ async function loadPreviewFonts(){
   }
 }
 
-async function renderDetachedPreview(nextState=null){
+async function renderDetachedPreview(nextState=null,fontPayload=[]){
   if(nextState) state=normalizeState(nextState);
   setPreviewTheme();
+  if(fontPayload?.length && typeof installPreviewFontPayload==='function'){
+    await installPreviewFontPayload(fontPayload);
+  }
   await loadPreviewFonts();
   renderPreview();
   setPreviewStatus('Sincronizado agora');
@@ -45,7 +48,9 @@ async function loadStoredPreview(){
 }
 
 previewChannel?.addEventListener('message',e=>{
-  if(e.data?.type==='STATE'&&e.data.state) renderDetachedPreview(e.data.state);
+  if(e.data?.type==='STATE'&&e.data.state){
+    renderDetachedPreview(e.data.state,e.data.fonts||[]);
+  }
 });
 
 document.getElementById('refreshPreviewBtn').onclick=loadStoredPreview;
