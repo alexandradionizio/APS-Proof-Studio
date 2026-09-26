@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>APS Proof Studio • Preview</title>
+  <link rel="stylesheet" href="assets/css/pdf.css">
+  <link rel="stylesheet" href="assets/css/models.css">
+  <link rel="stylesheet" href="assets/css/preview.css">
+</head>
+<body>
+  <div class="preview-window-shell">
+    <header class="preview-window-topbar">
+      <div class="preview-window-brand">
+        <div class="preview-window-mark">APS</div>
+        <div>
+          <div class="preview-window-title">Preview da prova</div>
+          <div class="preview-window-sub">Atualização automática a partir do painel</div>
+        </div>
+      </div>
+      <div class="preview-window-actions">
+        <span class="preview-window-status" id="previewSyncStatus">Carregando projeto…</span>
+        <button class="preview-window-btn" id="refreshPreviewBtn">Atualizar</button>
+        <button class="preview-window-btn primary" id="printPreviewBtn">Gerar PDF</button>
+      </div>
+    </header>
+    <main class="preview-window-body">
+      <p class="preview-window-note">Esta janela mostra somente a prova do cliente. As configurações internas ficam no painel principal.</p>
+      <div id="preview"></div>
+      <span id="pageCountLabel" hidden></span>
+    </main>
+  </div>
+
+  <script src="assets/js/state.js"></script>
+  <script src="assets/js/editor.js"></script>
+  <script src="assets/js/pdf.js"></script>
+  <script src="assets/js/fonts.js"></script>
+  <script src="assets/js/preview.js"></script>
+</body>
+</html>
