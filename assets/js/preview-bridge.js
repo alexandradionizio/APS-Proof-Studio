@@ -63,7 +63,7 @@ update=function(){
   broadcastPreviewState();
 };
 
-const APS_PREVIEW_BUILD='0.19.2';
+const APS_PREVIEW_BUILD='0.19.3';
 
 function openPreviewWindow(printAfter=false){
   const url=`preview.html?v=${APS_PREVIEW_BUILD}${printAfter?'&print=1':''}`;
