@@ -176,8 +176,9 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
       const style=cs.fontStyle||'normal';
       const family=cs.fontFamily||'sans-serif';
       let size=parseFloat(cs.fontSize)||24;
-      const maxW=canvas.width*.88;
-      const maxH=canvas.height*.72;
+      const isLargeSample=el.classList.contains('sample-name')||el.classList.contains('sample-number');
+      const maxW=canvas.width*(isLargeSample?.94:.88);
+      const maxH=canvas.height*(isLargeSample?.88:.72);
 
       const setFont=px=>{
         ctx.font=`${style} ${weight} ${Math.max(1,px*dpr)}px ${family}`;
