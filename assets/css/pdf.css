@@ -294,3 +294,48 @@
   height:100%;
   object-fit:contain;
 }
+
+
+/* v0.19.5 • composição vertical + amostras de nome/número maiores */
+.type-preview.sample-name{font-size:112pt}
+.type-preview.sample-number{font-size:164pt}
+
+.composition-layout{
+  align-items:center;
+  gap:5mm;
+}
+.composition-art-stack,
+.composition-art-stack.with-bottom{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5mm;
+}
+.composition-piece-card.top-with-bottom{
+  width:62mm;
+}
+.composition-piece-card.bottom-piece{
+  width:82mm;
+}
+.composition-details{
+  width:110mm;
+  margin:0 auto;
+  text-align:center;
+}
+.visual-reading,
+.palette-block{
+  width:100%;
+  text-align:center;
+}
+.palette-block{margin-top:5mm}
+.swatches{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:3mm;
+}
+.swatch{
+  width:23mm;
+}
