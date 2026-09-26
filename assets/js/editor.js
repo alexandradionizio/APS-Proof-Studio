@@ -47,7 +47,32 @@ function renderCompositionEditor(){
   }
   async function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(file)})}
   async function optimizeImage(file,target){
-    if(!['compositionImage','bottomCompositionImage'].includes(target))return fileToDataURL(file);const [w,h]=target==='compositionImage'?[300,390]:[410,305];const raw=await fileToDataURL(file);const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=raw});const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight),dw=Math.round(img.naturalWidth*scale),dh=Math.round(img.naturalHeight*scale),dx=Math.round((w-dw)/2),dy=Math.round((h-dh)/2);ctx.clearRect(0,0,w,h);ctx.drawImage(img,dx,dy,dw,dh);return c.toDataURL('image/webp',.9);
+    const raw=await visualFileToDataURL(file);
+    if(!['compositionImage','bottomCompositionImage'].includes(target))return raw;
+
+    const [w,h]=target==='compositionImage'?[300,390]:[410,305];
+    const img=await new Promise((res,rej)=>{
+      const im=new Image();
+      im.onload=()=>res(im);
+      im.onerror=()=>rej(new Error('Não foi possível preparar a imagem.'));
+      im.src=raw;
+    });
+
+    const c=document.createElement('canvas');
+    c.width=w;c.height=h;
+    const ctx=c.getContext('2d');
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality='high';
+
+    const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight),
+      dw=Math.round(img.naturalWidth*scale),
+      dh=Math.round(img.naturalHeight*scale),
+      dx=Math.round((w-dw)/2),
+      dy=Math.round((h-dh)/2);
+
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img,dx,dy,dw,dh);
+    return c.toDataURL('image/webp',.9);
   }
 
   function renderListEditor(){const root=$('#listEditor');root.innerHTML='';state.listRows.forEach(r=>{const row=document.createElement('div');row.className='list-row';row.innerHTML=`<input data-field="name" placeholder="Nome" value="${esc(r.name)}"><input data-field="number" placeholder="Nº" value="${esc(r.number)}"><input data-field="size" placeholder="Tam." value="${esc(r.size)}"><input data-field="obs" placeholder="Observação" value="${esc(r.obs)}"><button class="icon-btn">×</button>`;row.oninput=e=>{if(e.target.dataset.field){r[e.target.dataset.field]=e.target.value;update()}};$('.icon-btn',row).onclick=()=>{state.listRows=state.listRows.filter(x=>x.id!==r.id);renderListEditor();update()};root.appendChild(row)})}
