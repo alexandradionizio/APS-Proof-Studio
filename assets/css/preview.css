@@ -1,0 +1,33 @@
+html,body{margin:0;min-height:100%;background:#0b0e12;color:#f4f5f7;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.preview-window-shell{min-height:100vh}
+.preview-window-topbar{
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:0 20px;
+  position:sticky;
+  top:0;
+  z-index:30;
+  background:rgba(10,13,17,.94);
+  border-bottom:1px solid #252b32;
+  backdrop-filter:blur(14px)
+}
+.preview-window-brand{display:flex;align-items:center;gap:10px}
+.preview-window-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(145deg,#f0c85e,#d2a32a);display:grid;place-items:center;color:#111;font-weight:900;font-size:10px}
+.preview-window-title{font-size:12px;font-weight:850}
+.preview-window-sub{font-size:9px;color:#7d8792;margin-top:2px}
+.preview-window-actions{display:flex;align-items:center;gap:8px}
+.preview-window-status{font-size:9.5px;color:#8f98a3;margin-right:4px}
+.preview-window-btn{border:1px solid #363d45;background:#171c22;color:#f4f5f7;border-radius:8px;padding:8px 11px;font-size:10px;font-weight:800;cursor:pointer}
+.preview-window-btn.primary{background:linear-gradient(100deg,#f0c85e,#d2a32a);border-color:#d2a32a;color:#111}
+.preview-window-body{padding:26px 18px 60px;overflow:auto}
+#preview{display:grid;justify-content:center;gap:26px}
+.preview-window-note{text-align:center;color:#707985;font-size:9px;margin:0 0 18px}
+@media(max-width:900px){.preview-window-body{padding:14px 6px 40px}.pdf-page{zoom:.76}}
+@media print{
+  .preview-window-topbar,.preview-window-note{display:none!important}
+  html,body,.preview-window-shell,.preview-window-body,#preview{background:white!important;margin:0!important;padding:0!important;width:auto!important;min-height:0!important}
+  #preview{display:block!important}
+}
