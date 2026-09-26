@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>APS Proof Studio</title>
-  <link rel="stylesheet" href="assets/css/ui.css?v=0.19.2">
-  <link rel="stylesheet" href="assets/css/pdf.css?v=0.19.2">
-  <link rel="stylesheet" href="assets/css/models.css?v=0.19.2">
-  <link rel="stylesheet" href="assets/css/studio.css?v=0.19.2">
+  <link rel="stylesheet" href="assets/css/ui.css?v=0.19.3">
+  <link rel="stylesheet" href="assets/css/pdf.css?v=0.19.3">
+  <link rel="stylesheet" href="assets/css/models.css?v=0.19.3">
+  <link rel="stylesheet" href="assets/css/studio.css?v=0.19.3">
 </head>
 <body>
   <div class="studio-shell">
@@ -16,7 +16,7 @@
         <div class="brand-mark">APS</div>
         <div>
           <div class="brand-title">APS Proof Studio</div>
-          <div class="brand-sub">v0.19.2 • Studio</div>
+          <div class="brand-sub">v0.19.3 • Studio</div>
         </div>
       </div>
 
@@ -282,15 +282,21 @@
     <span id="pageCountLabel"></span>
     <div id="preview"></div>
   </div>
-  <input id="imagePicker" type="file" accept="image/*" hidden>
+  <input id="imagePicker" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,image/png,image/jpeg,image/webp,image/svg+xml,application/pdf" hidden>
 
-  <script src="assets/js/state.js?v=0.19.2"></script>
-  <script src="assets/js/editor.js?v=0.19.2"></script>
-  <script src="assets/js/pdf.js?v=0.19.2"></script>
-  <script src="assets/js/fonts.js?v=0.19.2"></script>
-  <script src="assets/js/bindings.js?v=0.19.2"></script>
-  <script src="assets/js/media.js?v=0.19.2"></script>
-  <script src="assets/js/navigation.js?v=0.19.2"></script>
-  <script src="assets/js/preview-bridge.js?v=0.19.2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if(window.pdfjsLib){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+  <script src="assets/js/state.js?v=0.19.3"></script>
+  <script src="assets/js/editor.js?v=0.19.3"></script>
+  <script src="assets/js/pdf.js?v=0.19.3"></script>
+  <script src="assets/js/fonts.js?v=0.19.3"></script>
+  <script src="assets/js/bindings.js?v=0.19.3"></script>
+  <script src="assets/js/media.js?v=0.19.3"></script>
+  <script src="assets/js/navigation.js?v=0.19.3"></script>
+  <script src="assets/js/preview-bridge.js?v=0.19.3"></script>
 </body>
 </html>
