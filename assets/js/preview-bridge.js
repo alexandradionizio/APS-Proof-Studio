@@ -24,8 +24,10 @@ function openPreviewWindow(printAfter=false){
   setTimeout(broadcastPreviewState,1200);
 }
 
-document.getElementById('previewBtn')?.addEventListener('click',()=>openPreviewWindow(false));
-document.getElementById('printBtn')?.addEventListener('click',()=>openPreviewWindow(true));
+const previewBtn=document.getElementById('previewBtn');
+if(previewBtn) previewBtn.onclick=()=>openPreviewWindow(false);
+const printBtn=document.getElementById('printBtn');
+if(printBtn) printBtn.onclick=()=>openPreviewWindow(true);
 
 const saveNote=document.getElementById('saveNote');
 if(saveNote){
