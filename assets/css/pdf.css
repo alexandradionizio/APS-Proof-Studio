@@ -185,3 +185,42 @@
   object-fit:cover;
   object-position:center;
 }
+
+
+/* v0.19.1 • identidade: encaixe integral e quadros físicos de 10×10 cm */
+.identity-grid{
+  grid-auto-flow:row;
+}
+.identity-grid-card{
+  width:100mm;
+  min-width:100mm;
+  max-width:100mm;
+}
+.identity-grid-image{
+  width:100mm;
+  min-width:100mm;
+  max-width:100mm;
+  height:100mm;
+  min-height:100mm;
+  max-height:100mm;
+  padding:0;
+  box-sizing:border-box;
+}
+.identity-grid-image img{
+  width:auto !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  flex:none;
+}
+.identity-row-image img,
+.crest-row .identity-row-image img{
+  width:auto !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
