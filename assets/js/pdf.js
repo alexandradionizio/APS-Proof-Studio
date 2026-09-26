@@ -35,7 +35,7 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
   }
 
   function applyRenderedFontAliases(){
-    $('[data-font-model][data-font-role]',$('#preview')).forEach(el=>{
+    document.querySelectorAll('#preview [data-font-model][data-font-role]').forEach(el=>{
       const modelId=el.dataset.fontModel,role=el.dataset.fontRole;
       const alias=fontAliases.get(`${modelId}:${role}`);
       const model=getModel(modelId);
