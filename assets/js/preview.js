@@ -13,14 +13,39 @@ function setPreviewStatus(text){
 }
 
 async function loadPreviewFonts(){
+  let requested=0,installed=0;
   try{
-    await Promise.all(state.models.flatMap(m=>[
-      loadFontFace(m,'name'),
-      loadFontFace(m,'number')
-    ]));
+    if(window.opener && !window.opener.closed && typeof window.opener.apsGetPreviewFontSource==='function'){
+      for(const model of state.models){
+        for(const role of ['name','number']){
+          const selected=model[`${role}FontPostscript`]||model[`${role}FontFamily`]||
+            (model[`${role}FontFullName`]&&model[`${role}FontFullName`]!=='Fonte padrão do sistema'?model[`${role}FontFullName`]:'');
+          if(!selected) continue;
+          requested++;
+          const payload=await window.opener.apsGetPreviewFontSource(model.id,role);
+          if(payload?.buffer){
+            if(await registerFontSource(model,role,payload.buffer,payload.identity||selected)) installed++;
+          }
+        }
+      }
+    }
+
+    if(installed<requested){
+      for(const model of state.models){
+        for(const role of ['name','number']){
+          const selected=model[`${role}FontPostscript`]||model[`${role}FontFamily`]||
+            (model[`${role}FontFullName`]&&model[`${role}FontFullName`]!=='Fonte padrão do sistema'?model[`${role}FontFullName`]:'');
+          if(!selected) continue;
+          const key=`${model.id}:${role}`;
+          if(fontAliases.has(key)) continue;
+          if(await loadFontFace(model,role)) installed++;
+        }
+      }
+    }
   }catch(e){
-    console.warn('Preview cached fonts unavailable',e);
+    console.warn('Preview local fonts unavailable',e);
   }
+  return {requested,installed};
 }
 
 async function renderDetachedPreview(nextState=null,fontPayload=[]){
@@ -29,9 +54,12 @@ async function renderDetachedPreview(nextState=null,fontPayload=[]){
   if(fontPayload?.length && typeof installPreviewFontPayload==='function'){
     await installPreviewFontPayload(fontPayload);
   }
-  await loadPreviewFonts();
+  const fontResult=await loadPreviewFonts();
   renderPreview();
-  setPreviewStatus('Sincronizado agora');
+  const fontText=fontResult.requested
+    ? ` • fontes ${fontResult.installed}/${fontResult.requested}`
+    : '';
+  setPreviewStatus('Sincronizado agora'+fontText);
   if(new URLSearchParams(location.search).get('print')==='1' && !previewPrintHandled){
     previewPrintHandled=true;
     setTimeout(()=>window.print(),300);
