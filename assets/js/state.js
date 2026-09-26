@@ -12,7 +12,7 @@
   const TOP_LOCATION_GROUPS=[
     {label:'Frente',items:['Peito esquerdo','Peito direito','Peito central','Abdominal','Barra frontal']},
     {label:'Costas',items:['Nuca','Costas superiores','Costas centrais','Abaixo do número','Costas inferiores']},
-    {label:'Mangas e laterais',items:['Mangas','Manga esquerda','Manga direita','Ombro esquerdo','Ombro direito','Lateral esquerda','Lateral direita']},
+    {label:'Mangas e laterais',items:['Mangas','Manga esquerda','Manga direita','Ombros','Ombro esquerdo','Ombro direito','Lateral esquerda','Lateral direita']},
     {label:'Outros',items:['Outro']}
   ];
   const BOTTOM_LOCATION_GROUPS=[{label:'Calção',items:['Frente esquerda','Frente direita','Traseira esquerda','Traseira direita','Lateral esquerda','Lateral direita','Outro']}];
