@@ -13,19 +13,13 @@ function setPreviewStatus(text){
 }
 
 async function loadPreviewFonts(){
-  if(typeof window.queryLocalFonts!=='function') return;
   try{
-    const fonts=await window.queryLocalFonts();
-    const seen=new Set();
-    localFonts=[...fonts].filter(f=>{
-      const k=fontId(f);
-      if(seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-    await Promise.all(state.models.flatMap(m=>[loadFontFace(m,'name'),loadFontFace(m,'number')]));
+    await Promise.all(state.models.flatMap(m=>[
+      loadFontFace(m,'name'),
+      loadFontFace(m,'number')
+    ]));
   }catch(e){
-    console.warn('Preview local fonts unavailable',e);
+    console.warn('Preview cached fonts unavailable',e);
   }
 }
 
