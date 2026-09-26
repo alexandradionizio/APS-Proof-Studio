@@ -8,6 +8,13 @@ Este repositório público usa **somente dados e imagens fictícios**. Nenhum ar
 
 O APS Proof Studio roda no navegador e salva o projeto localmente via IndexedDB. Projetos exportados (`.apsproof`) podem conter dados de trabalho e, por isso, são ignorados pelo Git.
 
+
+## Interface Studio
+
+A interface principal funciona como um painel de controle: cada etapa do projeto abre separadamente no painel central. O botão **Visualizar prova** abre `preview.html` em outra janela do navegador.
+
+A janela de preview é sincronizada automaticamente com o editor usando `BroadcastChannel`, enquanto o estado do projeto continua persistido localmente em IndexedDB. Fechar a janela de preview não apaga o projeto.
+
 ## Executar localmente
 
 Abra o `index.html` diretamente no navegador para usar os recursos básicos.
