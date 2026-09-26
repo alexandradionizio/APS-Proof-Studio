@@ -416,3 +416,28 @@ body{background:var(--studio-bg)}
 @media print{
   .studio-shell{display:none!important}
 }
+
+
+/* v0.19.5 • ordenação manual de elementos */
+.element-item-actions{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+.config-view .element-order-btn{
+  background:#f0eee8;
+  color:#4d4942;
+  border-color:#d3cec5;
+  font-weight:900;
+  font-size:15px;
+}
+.config-view .element-order-btn:hover:not(:disabled){
+  background:#fff8df;
+  color:#7a5a0a;
+  border-color:var(--studio-gold);
+}
+.config-view .element-order-btn:disabled{
+  opacity:.28;
+  cursor:not-allowed;
+}
