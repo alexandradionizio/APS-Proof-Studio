@@ -28,21 +28,31 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
     </article>`;
   }
 
-  function identityPageWrap(model,n,{crest=null,items=[]}={},continued=false){
-    const title=continued?'IDENTIDADE & ELEMENTOS • CONTINUAÇÃO':'IDENTIDADE & ELEMENTOS';
-    const subtitle=continued
-      ?`Continuação dos patrocinadores e demais elementos • ${model.name||'MODELO'}`
-      :`Escudo central + patrocinadores e demais aplicações • ${model.name||'MODELO'}`;
+  function identityPageWrap(model,n,{crest=null,items=[],scope='top'}={},continued=false){
+    const isBottom=scope==='bottom';
+    const title=isBottom
+      ?(continued?'IDENTIDADE & ELEMENTOS • PARTE DE BAIXO • CONTINUAÇÃO':'IDENTIDADE & ELEMENTOS • PARTE DE BAIXO')
+      :(continued?'IDENTIDADE & ELEMENTOS • PARTE DE CIMA • CONTINUAÇÃO':'IDENTIDADE & ELEMENTOS');
+
+    const subtitle=isBottom
+      ?`Patrocinadores e aplicações do calção • ${model.name||'MODELO'}`
+      :(continued
+        ?`Continuação dos patrocinadores e demais elementos da parte de cima • ${model.name||'MODELO'}`
+        :`Escudo central + patrocinadores e demais aplicações da parte de cima • ${model.name||'MODELO'}`);
 
     const crestMarkup=crest
       ?`<div class="identity-crest-zone">${identityGridCardMarkup(crest)}</div>`
+      :'';
+
+    const scopeHeading=isBottom
+      ?'<div class="identity-scope-heading"><span>PARTE DE BAIXO</span><small>Elementos do calção</small></div>'
       :'';
 
     const itemsMarkup=items.length
       ?`<div class="identity-elements-grid">${items.map(identityGridCardMarkup).join('')}</div>`
       :'';
 
-    const body=`<div class="identity-layout">${crestMarkup}${itemsMarkup}</div>`;
+    const body=`<div class="identity-layout identity-layout-${scope}">${crestMarkup}${scopeHeading}${itemsMarkup}</div>`;
 
     return `<section class="pdf-page identity-page" style="--p-accent:${state.accent};--p-accent2:${state.accent2}">
       ${pageHeader(n)}
@@ -59,30 +69,41 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
 
     const src=identitySource(model);
     const crest={kind:'crest',scope:'top',data:src.crest};
-    const elements=[
-      ...src.elements.map(e=>({kind:'element',scope:'top',data:e}))
-    ];
-
-    if(model.includeBottom){
-      src.bottomElements.forEach(e=>elements.push({kind:'element',scope:'bottom',data:e}));
-    }
+    const topElements=src.elements.map(e=>({kind:'element',scope:'top',data:e}));
+    const bottomElements=model.includeBottom
+      ?src.bottomElements.map(e=>({kind:'element',scope:'bottom',data:e}))
+      :[];
 
     const pages=[];
 
-    // O escudo é sempre independente, centralizado no topo.
-    // Na primeira página entram no máximo dois elementos abaixo dele.
-    const firstItems=elements.slice(0,2);
-    pages.push(identityPageWrap(model,start,{crest,items:firstItems},false));
+    // O escudo pertence sempre à primeira página e é independente das grades.
+    // A primeira página recebe até dois itens da PARTE DE CIMA abaixo dele.
+    pages.push(identityPageWrap(
+      model,
+      start,
+      {crest,items:topElements.slice(0,2),scope:'top'},
+      false
+    ));
 
-    // As páginas seguintes ficam somente com os elementos, quatro por página.
-    // A grade mantém dois por linha e centraliza qualquer último item ímpar.
-    const remaining=elements.slice(2);
-    for(let i=0;i<remaining.length;i+=4){
+    // Continuação exclusiva da PARTE DE CIMA.
+    const remainingTop=topElements.slice(2);
+    for(let i=0;i<remainingTop.length;i+=4){
       pages.push(identityPageWrap(
         model,
         start+pages.length,
-        {crest:null,items:remaining.slice(i,i+4)},
+        {crest:null,items:remainingTop.slice(i,i+4),scope:'top'},
         true
+      ));
+    }
+
+    // A PARTE DE BAIXO nunca é misturada com a continuação da parte de cima:
+    // ela sempre começa em uma página/bloco próprio.
+    for(let i=0;i<bottomElements.length;i+=4){
+      pages.push(identityPageWrap(
+        model,
+        start+pages.length,
+        {crest:null,items:bottomElements.slice(i,i+4),scope:'bottom'},
+        i>0
       ));
     }
 
@@ -126,6 +147,69 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
         el.style.setProperty('font-family',fontCss(model,role),'important');
         el.style.setProperty('font-synthesis','none');
       }
+    });
+    requestAnimationFrame(()=>renderTypographyCanvases());
+  }
+
+  function renderTypographyCanvases(){
+    document.querySelectorAll('#preview .type-preview[data-font-model][data-font-role]').forEach(el=>{
+      const text=el.dataset.previewText??el.textContent??'';
+      if(!el.dataset.previewText)el.dataset.previewText=text;
+      if(!text.trim()){el.innerHTML='';return}
+
+      const rect=el.getBoundingClientRect();
+      if(rect.width<2||rect.height<2)return;
+
+      const cs=getComputedStyle(el);
+      const dpr=Math.max(2,Math.min(4,window.devicePixelRatio||1));
+      const canvas=document.createElement('canvas');
+      canvas.className='type-preview-canvas';
+      canvas.width=Math.max(1,Math.round(rect.width*dpr));
+      canvas.height=Math.max(1,Math.round(rect.height*dpr));
+      canvas.style.width='100%';
+      canvas.style.height='100%';
+
+      const ctx=canvas.getContext('2d');
+      if(!ctx)return;
+
+      const weight=cs.fontWeight||'400';
+      const style=cs.fontStyle||'normal';
+      const family=cs.fontFamily||'sans-serif';
+      let size=parseFloat(cs.fontSize)||24;
+      const maxW=canvas.width*.88;
+      const maxH=canvas.height*.72;
+
+      const setFont=px=>{
+        ctx.font=`${style} ${weight} ${Math.max(1,px*dpr)}px ${family}`;
+      };
+
+      setFont(size);
+      let metrics=ctx.measureText(text);
+      let inkW=Math.max(1,metrics.actualBoundingBoxLeft+metrics.actualBoundingBoxRight);
+      let inkH=Math.max(1,metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent);
+
+      const fit=Math.min(1,maxW/inkW,maxH/inkH);
+      size=Math.max(8,size*fit);
+      setFont(size);
+      metrics=ctx.measureText(text);
+
+      const left=metrics.actualBoundingBoxLeft||0;
+      const right=metrics.actualBoundingBoxRight||metrics.width||1;
+      const ascent=metrics.actualBoundingBoxAscent||size*dpr*.75;
+      const descent=metrics.actualBoundingBoxDescent||size*dpr*.25;
+      const width=left+right;
+      const height=ascent+descent;
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle=cs.color||'#111';
+      ctx.textAlign='left';
+      ctx.textBaseline='alphabetic';
+
+      const x=(canvas.width-width)/2+left;
+      const y=(canvas.height-height)/2+ascent;
+      ctx.fillText(text,x,y);
+
+      el.replaceChildren(canvas);
     });
   }
   function listPages(start){const rows=state.listRows.length?state.listRows:[{name:'',number:'',size:'',obs:''}],chunks=[];for(let i=0;i<rows.length;i+=18)chunks.push(rows.slice(i,i+18));return chunks.map((c,idx)=>pageWrap(start+idx,idx===0?'LISTA DE PRODUÇÃO':'LISTA • CONTINUAÇÃO',idx===0?'Nomes, números, tamanhos e observações para conferência':'Continuação da lista cadastrada',`<table class="list-table"><thead><tr><th>Nome</th><th>Nº</th><th>Tamanho</th><th>Observação</th></tr></thead><tbody>${c.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.number)}</td><td>${esc(r.size)}</td><td>${esc(r.obs)}</td></tr>`).join('')}</tbody></table><div class="list-summary">Itens cadastrados: ${state.listRows.length}</div>`))}
