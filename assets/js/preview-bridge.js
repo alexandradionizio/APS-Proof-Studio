@@ -63,8 +63,10 @@ update=function(){
   broadcastPreviewState();
 };
 
+const APS_PREVIEW_BUILD='0.19.1';
+
 function openPreviewWindow(printAfter=false){
-  const url='preview.html'+(printAfter?'?print=1':'');
+  const url=`preview.html?v=${APS_PREVIEW_BUILD}${printAfter?'&print=1':''}`;
   apsPreviewWindow=window.open(url,'APSProofStudioPreview','width=1180,height=900,resizable=yes,scrollbars=yes');
   if(!apsPreviewWindow){
     alert('O navegador bloqueou a janela de preview. Libere pop-ups para o APS Proof Studio.');
