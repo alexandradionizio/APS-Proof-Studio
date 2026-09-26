@@ -15,14 +15,26 @@ function fontBlobKey(model,role){
   return `fontblob:${model.id}:${role}`;
 }
 
+function selectedFontToken(model,role){
+  if(!model)return '';
+  return model[`${role}FontPostscript`]||
+    (model[`${role}FontFullName`]&&model[`${role}FontFullName`]!=='Fonte padrão do sistema'
+      ?`${model[`${role}FontFamily`]||''}|||${model[`${role}FontFullName`]||''}`
+      :'');
+}
+
+function isOwnTypographyModel(model){
+  return !!model && (model.isMain||!model.inheritTypography);
+}
+
 function isArrayBufferLike(value){
   return !!value && typeof value.byteLength==='number' && Object.prototype.toString.call(value)==='[object ArrayBuffer]';
 }
 
 async function fontSourceToBuffer(source){
-  if(source instanceof Blob) return await source.arrayBuffer();
-  if(isArrayBufferLike(source)) return source.slice ? source.slice(0) : new Uint8Array(source).slice().buffer;
-  if(ArrayBuffer.isView(source)) return source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength);
+  if(source instanceof Blob)return await source.arrayBuffer();
+  if(isArrayBufferLike(source))return source.slice?source.slice(0):new Uint8Array(source).slice().buffer;
+  if(ArrayBuffer.isView(source))return source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength);
   return null;
 }
 
@@ -44,6 +56,18 @@ function clearLoadedFont(key){
   fontAliases.delete(key);
 }
 
+async function clearFontRoleCache(model,role,removeStored=true){
+  if(!model)return;
+  const key=`${model.id}:${role}`;
+  clearLoadedFont(key);
+  fontTransferCache.delete(key);
+  if(removeStored){
+    try{if(db)await dbDelete(fontBlobKey(model,role))}catch(e){
+      console.warn('Não foi possível limpar o cache da fonte',e);
+    }
+  }
+}
+
 function populateFontSelectors(){
   const m=typographySource(getActiveModel());
   const ns=$('#nameFontSelect'),xs=$('#numberFontSelect');
@@ -54,15 +78,19 @@ function populateFontSelectors(){
     const fam=m[`${role}FontFamily`]||'';
     const full=m[`${role}FontFullName`]||'Fonte padrão do sistema';
     const selectedId=ps||'';
-    const hasSelected=localFonts.some(f=>(ps&&fontId(f)===ps)||(!ps&&fam&&f.family===fam));
+    const hasSelected=localFonts.some(f=>
+      (ps&&fontId(f)===ps)||
+      (!ps&&full&&f.fullName===full)||
+      (!ps&&!full&&fam&&f.family===fam)
+    );
     const rows=['<option value="">Fonte padrão do sistema</option>'];
 
-    if(!hasSelected && full && full!=='Fonte padrão do sistema'){
+    if(!hasSelected&&full&&full!=='Fonte padrão do sistema'){
       rows.push(`<option value="${esc(selectedId||'__cached__')}" selected disabled>${esc(full)} • salva localmente</option>`);
     }
 
     rows.push(...localFonts.map(f=>{
-      const active=(ps&&fontId(f)===ps)||(!ps&&fam&&f.family===fam);
+      const active=(ps&&fontId(f)===ps)||(!ps&&full&&f.fullName===full);
       return `<option value="${esc(fontId(f))}" ${active?'selected':''}>${esc(fontLabel(f))}</option>`;
     }));
     return rows.join('');
@@ -73,23 +101,38 @@ function populateFontSelectors(){
 }
 
 async function registerFontSource(model,role,source,identity=''){
-  if(!model) return false;
+  if(!model)return false;
+  const expected=selectedFontToken(model,role);
+  const token=identity||expected;
+  if(!token)return false;
+
+  // Nunca permite que um arquivo antigo seja aplicado depois de a seleção mudar.
+  if(expected&&identity&&identity!==expected){
+    console.warn('Fonte ignorada por estar desatualizada',role,identity,'esperada:',expected);
+    return false;
+  }
+
   const buffer=await fontSourceToBuffer(source);
-  if(!buffer) return false;
+  if(!buffer)return false;
+
+  // Confere novamente depois da operação assíncrona.
+  if(selectedFontToken(model,role)!==expected)return false;
 
   const key=`${model.id}:${role}`;
-  const token=identity||model[`${role}FontPostscript`]||model[`${role}FontFullName`]||model[`${role}FontFamily`]||key;
   const alias=`APS_${model.id.replace(/[^a-z0-9]/gi,'')}_${role}_${fontTokenHash(token)}`;
 
   clearLoadedFont(key);
 
   const face=new FontFace(alias,buffer);
   await face.load();
+
+  if(selectedFontToken(model,role)!==expected)return false;
+
   document.fonts.add(face);
   loadedFontFaces.set(key,face);
   fontAliases.set(key,alias);
 
-  const blob=source instanceof Blob ? source : new Blob([buffer],{type:'font/ttf'});
+  const blob=source instanceof Blob?source:new Blob([buffer],{type:'font/ttf'});
   fontTransferCache.set(key,{blob,buffer,identity:token});
 
   await document.fonts.load(`32px "${alias}"`);
@@ -98,23 +141,45 @@ async function registerFontSource(model,role,source,identity=''){
   return document.fonts.check(`32px "${alias}"`);
 }
 
-async function registerFontBlob(model,role,blob,identity=''){
-  return registerFontSource(model,role,blob,identity);
+async function selectLocalFont(model,role,font){
+  if(!model||!['name','number'].includes(role))return false;
+
+  const previous=selectedFontToken(model,role);
+  const next=font?fontId(font):'';
+
+  // Limpa o blob/alias da fonte anterior ANTES de trocar os metadados.
+  if(previous!==next)await clearFontRoleCache(model,role,true);
+
+  model[`${role}FontFamily`]=font?.family||'';
+  model[`${role}FontFullName`]=font?.fullName||font?.family||'Fonte padrão do sistema';
+  model[`${role}FontPostscript`]=next;
+
+  if(!font){
+    await clearFontRoleCache(model,role,true);
+    return true;
+  }
+
+  return await loadFontFace(model,role);
 }
 
 function getPreviewFontPayload(){
   const payload=[];
   for(const model of state.models){
+    if(!isOwnTypographyModel(model))continue;
     for(const role of ['name','number']){
       const key=`${model.id}:${role}`;
+      const expected=selectedFontToken(model,role);
       const cached=fontTransferCache.get(key);
-      if(cached?.blob instanceof Blob || cached?.buffer){
+
+      // Só envia o blob se ele realmente pertence à fonte atualmente selecionada.
+      if(!expected||!cached||cached.identity!==expected)continue;
+      if(cached.blob instanceof Blob||cached.buffer){
         payload.push({
           modelId:model.id,
           role,
-          blob:cached.blob instanceof Blob ? cached.blob : null,
+          blob:cached.blob instanceof Blob?cached.blob:null,
           buffer:cached.buffer||null,
-          identity:cached.identity||''
+          identity:cached.identity
         });
       }
     }
@@ -126,11 +191,13 @@ async function installPreviewFontPayload(payload=[]){
   let installed=0;
   for(const item of payload){
     const model=getModel(item?.modelId);
-    if(!model || !['name','number'].includes(item?.role)) continue;
+    if(!model||!isOwnTypographyModel(model)||!['name','number'].includes(item?.role))continue;
+    const expected=selectedFontToken(model,item.role);
+    if(!expected||item.identity!==expected)continue;
     const source=item.buffer||item.blob;
-    if(!source) continue;
+    if(!source)continue;
     try{
-      if(await registerFontSource(model,item.role,source,item.identity||'')) installed++;
+      if(await registerFontSource(model,item.role,source,item.identity))installed++;
     }catch(e){
       console.warn('Falha ao receber fonte do painel',e);
     }
@@ -139,69 +206,86 @@ async function installPreviewFontPayload(payload=[]){
 }
 
 async function loadFontFace(model,role){
+  if(!model)return false;
   const ps=model[`${role}FontPostscript`]||'';
   const fam=model[`${role}FontFamily`]||'';
   const full=model[`${role}FontFullName`]||'Fonte padrão do sistema';
   const key=`${model.id}:${role}`;
-  const selectedToken=ps||fam||(full!=='Fonte padrão do sistema'?full:'');
+  const selectedToken=selectedFontToken(model,role);
 
   if(!selectedToken){
-    clearLoadedFont(key);
-    fontTransferCache.delete(key);
-    try{if(db)await dbDelete(fontBlobKey(model,role))}catch{}
+    await clearFontRoleCache(model,role,true);
     return false;
   }
 
   try{
     const memory=fontTransferCache.get(key);
-    if(memory?.blob instanceof Blob){
-      return await registerFontBlob(model,role,memory.blob,memory.identity||selectedToken);
+
+    // O bug antigo estava aqui: qualquer blob da mesma função (nome/número)
+    // era reutilizado mesmo depois de escolher outra fonte.
+    if(memory){
+      if(memory.identity===selectedToken&&(memory.blob instanceof Blob||memory.buffer)){
+        return await registerFontSource(model,role,memory.buffer||memory.blob,memory.identity);
+      }
+      fontTransferCache.delete(key);
+      clearLoadedFont(key);
     }
 
     const item=
       localFonts.find(f=>ps&&fontId(f)===ps)||
       localFonts.find(f=>full&&f.fullName===full)||
-      localFonts.find(f=>fam&&f.family===fam);
-
-    let blob=null;
-    let cached=null;
-    let identity=selectedToken;
+      localFonts.find(f=>!ps&&fam&&f.family===fam);
 
     if(item){
-      blob=await item.blob();
-      identity=fontId(item)||selectedToken;
-      cached={
+      const blob=await item.blob();
+      const identity=fontId(item);
+
+      // Se a seleção mudou enquanto o blob era lido, descarta este resultado.
+      if(selectedFontToken(model,role)!==selectedToken)return false;
+
+      const cached={
         blob,
         id:identity,
         family:item.family||fam,
         fullName:item.fullName||full,
         postscriptName:item.postscriptName||ps
       };
-      try{if(db)await dbSet(fontBlobKey(model,role),cached)}catch(e){console.warn('Não foi possível guardar a fonte local no IndexedDB',e)}
-    }else{
-      try{if(db)cached=await dbGet(fontBlobKey(model,role))}catch{}
-      if(cached instanceof Blob)blob=cached;
-      else if(cached?.blob instanceof Blob)blob=cached.blob;
-      identity=cached?.id||selectedToken;
+      try{if(db)await dbSet(fontBlobKey(model,role),cached)}catch(e){
+        console.warn('Não foi possível guardar a fonte local no IndexedDB',e);
+      }
+      return await registerFontSource(model,role,blob,identity);
     }
 
-    if(!blob){
-      clearLoadedFont(key);
-      return false;
+    let cached=null;
+    try{if(db)cached=await dbGet(fontBlobKey(model,role))}catch{}
+
+    const cachedBlob=cached instanceof Blob?cached:cached?.blob;
+    const cachedIdentity=cached?.id||cached?.postscriptName||'';
+
+    // Também rejeita cache persistente antigo que não corresponde à seleção atual.
+    if(cachedBlob instanceof Blob&&cachedIdentity===selectedToken){
+      return await registerFontSource(model,role,cachedBlob,cachedIdentity);
     }
 
-    return await registerFontSource(model,role,blob,identity);
+    if(cachedBlob){
+      try{if(db)await dbDelete(fontBlobKey(model,role))}catch{}
+    }
+    clearLoadedFont(key);
+    return false;
   }catch(e){
     console.warn('Falha ao aplicar fonte local',e);
     clearLoadedFont(key);
     return false;
   }
 }
+
 async function applyAllSelectedFonts(){
-  await Promise.all(state.models.flatMap(m=>[
-    loadFontFace(m,'name'),
-    loadFontFace(m,'number')
-  ]));
+  const jobs=[];
+  for(const model of state.models){
+    if(!isOwnTypographyModel(model))continue;
+    jobs.push(loadFontFace(model,'name'),loadFontFace(model,'number'));
+  }
+  await Promise.all(jobs);
   renderPreview();
 }
 
@@ -238,7 +322,7 @@ async function scanLocalFonts(){
     populateFontSelectors();
     await applyAllSelectedFonts();
     if(typeof broadcastPreviewState==='function')broadcastPreviewState();
-    setFontStatus(`${localFonts.length} fontes do computador disponíveis. As fontes escolhidas ficam armazenadas somente neste navegador para o Preview.`,'ok');
+    setFontStatus(`${localFonts.length} fontes do computador disponíveis.`,'ok');
   }catch(e){
     setFontStatus(`Não consegui ler as fontes instaladas: ${e?.message||'erro desconhecido'}`,'error');
   }finally{
