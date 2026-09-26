@@ -6,8 +6,64 @@ function pageHeader(pageNum){const proof=state.mode==='art'?'PROVA DE ARTE':'PRO
   function compositionPage(model,n){const sw=(model.palette||[]).map(p=>`<div class="swatch"><div class="swatch-color" style="background:${p.hex}"></div>${esc(p.name||p.hex)}</div>`).join(''),top=model.compositionImage?`<img src="${model.compositionImage}">`:'<div class="empty-card" style="color:#bbb">Sem arte da camisa</div>',bottom=model.bottomCompositionImage?`<img src="${model.bottomCompositionImage}">`:'<div class="empty-card" style="color:#bbb">Sem arte do calção</div>',pieces=model.includeBottom?`<div class="composition-art-stack with-bottom"><div class="composition-piece-card top-with-bottom"><div class="composition-piece-label"><span class="card-label">PARTE DE CIMA</span></div><div class="composition-piece-image">${top}</div></div><div class="composition-piece-card bottom-piece"><div class="composition-piece-label"><span class="card-label">PARTE DE BAIXO</span></div><div class="composition-piece-image">${bottom}</div></div></div>`:`<div class="composition-art-stack"><div class="composition-piece-card single"><div class="composition-piece-label"><span class="card-label">PARTE DE CIMA</span></div><div class="composition-piece-image">${top}</div></div></div>`;const details=`<div class="composition-details"><div class="visual-reading"><h3>LEITURA VISUAL</h3><div class="visual-notes">${multiline(model.compositionNotes||'')}</div></div><div class="palette-block"><h3>PALETA DE REFERÊNCIA</h3><div class="swatches">${sw}</div></div></div>`;return pageWrap(n,`FUNDO & COMPOSIÇÃO • ${model.name||'MODELO'}`,'Detalhamento visual da estampa e das cores de referência',`<div class="composition-layout">${pieces}${details}</div>`)}
   const resolvedType=d=>d?.type==='Outro'&&d?.customType?.trim()?d.customType.trim():(d?.type||'Elemento');
   const resolvedLocation=d=>d?.location==='Outro'&&d?.customLocation?.trim()?d.customLocation.trim():(d?.location||'Não informada');
-  function identityRowMarkup(entry){if(entry.kind==='empty')return `<div class="identity-empty">${esc(entry.text)}</div>`;const d=entry.data||{},img=d.image?`<img src="${d.image}">`:`<div class="identity-row-placeholder">Sem imagem</div>`,type=entry.kind==='crest'?'ESCUDO':resolvedType(d),loc=entry.kind==='crest'?(d.location==='Outro'&&d.customLocation?.trim()?d.customLocation.trim():(d.location||'Não informada')):resolvedLocation(d),bg=(d.bg||'#FFFFFF').toUpperCase();return `<div class="identity-row-card ${entry.kind==='crest'?'crest-row':''}"><div class="identity-row-image" style="background:${bg}">${img}</div><div class="identity-row-info"><div class="identity-row-type">${esc(type)}</div><div class="identity-row-name">${esc(d.name||'Sem nome')}</div><div class="identity-row-location">${esc(loc)}</div></div></div>`}
-  function identityPagesForModel(model,start){if(!model.isMain&&model.inheritIdentity)return [];const src=identitySource(model),entries=[{kind:'section',scope:'top',label:'PARTE DE CIMA',note:'Camisa',h:11},{kind:'crest',scope:'top',data:src.crest,h:82},...src.elements.map(e=>({kind:'element',scope:'top',data:e,h:53}))];if(model.includeBottom){entries.push({kind:'section',scope:'bottom',label:'PARTE DE BAIXO',note:'Calção',h:11});if(src.bottomElements.length)src.bottomElements.forEach(e=>entries.push({kind:'element',scope:'bottom',data:e,h:53}));else entries.push({kind:'empty',scope:'bottom',text:'Nenhum patrocinador ou elemento adicional cadastrado na parte de baixo.',h:24})}const maxH=188,chunks=[];let cur=[],used=0,activeScope=null;for(let i=0;i<entries.length;i++){const e=entries[i],next=entries[i+1],need=e.kind==='section'&&next?e.h+next.h:e.h;if(cur.length&&used+need>maxH){chunks.push(cur);cur=[];used=0}if(!cur.length&&e.kind!=='section'&&activeScope===e.scope){const c={kind:'section',scope:e.scope,label:e.scope==='bottom'?'PARTE DE BAIXO':'PARTE DE CIMA',note:'Continuação',h:11};cur.push(c);used+=c.h}cur.push(e);used+=e.h;if(e.kind==='section')activeScope=e.scope}if(cur.length)chunks.push(cur);return chunks.map((chunk,idx)=>{const body=`<div class="identity-stack">${chunk.map(e=>e.kind==='section'?`<div class="identity-section-bar"><span>${esc(e.label)}</span><small>${esc(e.note||'')}</small></div>`:identityRowMarkup(e)).join('')}</div>`;return pageWrap(start+idx,idx===0?'IDENTIDADE & ELEMENTOS':'IDENTIDADE & ELEMENTOS • CONTINUAÇÃO',idx===0?'Escudo, patrocinadores, logos, ícones e demais aplicações do uniforme':'Continuação dos elementos cadastrados no modelo',body)})}
+  function identityGridCardMarkup(entry){
+    const d=entry.data||{};
+    const img=d.image
+      ?`<img src="${d.image}" alt="${esc(d.name||entry.kind||'Elemento')}">`
+      :'<div class="identity-grid-placeholder">Sem imagem</div>';
+    const type=entry.kind==='crest'?'ESCUDO':resolvedType(d);
+    const loc=entry.kind==='crest'
+      ?(d.location==='Outro'&&d.customLocation?.trim()?d.customLocation.trim():(d.location||'Não informada'))
+      :resolvedLocation(d);
+    const bg=(d.bg||'#FFFFFF').toUpperCase();
+    const scope=entry.scope==='bottom'?'PARTE DE BAIXO':'PARTE DE CIMA';
+
+    return `<article class="identity-grid-card">
+      <div class="identity-grid-image" style="background:${bg}">${img}</div>
+      <div class="identity-grid-info">
+        <div class="identity-grid-meta"><span>${esc(scope)}</span><span>${esc(type)}</span></div>
+        <div class="identity-grid-name">${esc(d.name||'Sem nome')}</div>
+        <div class="identity-grid-location">${esc(loc)}</div>
+      </div>
+    </article>`;
+  }
+
+  function identityPageWrap(model,n,items,continued=false){
+    const title=continued?'IDENTIDADE & ELEMENTOS • CONTINUAÇÃO':'IDENTIDADE & ELEMENTOS';
+    const subtitle=continued
+      ?`Continuação dos elementos cadastrados em ${model.name||'MODELO'}`
+      :`Escudo, patrocinadores, logos e demais aplicações • ${model.name||'MODELO'}`;
+    const body=`<div class="identity-grid">${items.map(identityGridCardMarkup).join('')}</div>`;
+    return `<section class="pdf-page identity-page" style="--p-accent:${state.accent};--p-accent2:${state.accent2}">
+      ${pageHeader(n)}
+      <div class="pdf-body">
+        ${sectionHead(title,subtitle)}
+        ${body}
+        <div class="pdf-footer">Documento de conferência • gerado no APS Proof Studio</div>
+      </div>
+    </section>`;
+  }
+
+  function identityPagesForModel(model,start){
+    if(!model.isMain&&model.inheritIdentity)return [];
+
+    const src=identitySource(model);
+    const entries=[
+      {kind:'crest',scope:'top',data:src.crest},
+      ...src.elements.map(e=>({kind:'element',scope:'top',data:e}))
+    ];
+
+    if(model.includeBottom){
+      src.bottomElements.forEach(e=>entries.push({kind:'element',scope:'bottom',data:e}));
+    }
+
+    if(!entries.length)return [];
+
+    const chunks=[];
+    for(let i=0;i<entries.length;i+=4)chunks.push(entries.slice(i,i+4));
+
+    return chunks.map((chunk,idx)=>identityPageWrap(model,start+idx,chunk,idx>0));
+  }
   function fontCss(model,role){
     const key=`${model.id}:${role}`,alias=fontAliases.get(key);
     const full=model[`${role}FontFullName`],fam=model[`${role}FontFamily`];
