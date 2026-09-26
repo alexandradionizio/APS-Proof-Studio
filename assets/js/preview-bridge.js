@@ -1,3 +1,37 @@
+window.apsGetPreviewFontSource=async function(modelId,role){
+  const model=getModel(modelId);
+  if(!model||!['name','number'].includes(role)) return null;
+  const ps=model[`${role}FontPostscript`]||'';
+  const fam=model[`${role}FontFamily`]||'';
+  const full=model[`${role}FontFullName`]||'Fonte padrão do sistema';
+  const token=ps||fam||(full!=='Fonte padrão do sistema'?full:'');
+  if(!token) return null;
+
+  try{
+    const item=
+      localFonts.find(f=>ps&&fontId(f)===ps)||
+      localFonts.find(f=>full&&f.fullName===full)||
+      localFonts.find(f=>fam&&f.family===fam);
+
+    if(item){
+      const blob=await item.blob();
+      const buffer=await blob.arrayBuffer();
+      return {buffer,identity:fontId(item)||token};
+    }
+
+    if(db){
+      const cached=await dbGet(fontBlobKey(model,role));
+      const blob=cached instanceof Blob?cached:cached?.blob;
+      if(blob instanceof Blob){
+        return {buffer:await blob.arrayBuffer(),identity:cached?.id||token};
+      }
+    }
+  }catch(e){
+    console.warn('Não foi possível fornecer a fonte ao Preview',e);
+  }
+  return null;
+};
+
 const apsPreviewChannel=('BroadcastChannel' in window)?new BroadcastChannel('aps-proof-studio'):null;
 let apsPreviewWindow=null;
 
