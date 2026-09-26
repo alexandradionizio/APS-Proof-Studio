@@ -53,3 +53,135 @@
   .app-shell,.workspace,.preview-wrap,.preview{display:block!important;background:white!important;margin:0!important;padding:0!important;width:auto!important;min-height:0!important;overflow:visible!important}
   .pdf-page{box-shadow:none!important;margin:0!important;width:210mm!important;height:297mm!important;zoom:1!important;transform:none!important}
 }
+
+
+/* IDENTIDADE & ELEMENTOS • grade A4 2×2 */
+.identity-page .pdf-body{
+  padding:7mm 3mm 7mm;
+  height:calc(297mm - 19mm);
+}
+.identity-page .pdf-section-title{
+  font-size:17pt;
+  letter-spacing:-.45px;
+}
+.identity-page .pdf-title-rule{
+  width:20mm;
+  height:1.1mm;
+  margin:2mm 0 2mm;
+}
+.identity-page .pdf-subtitle{
+  font-size:7.2pt;
+  margin-bottom:3mm;
+}
+.identity-page .pdf-footer{
+  bottom:2.5mm;
+  font-size:5.8pt;
+}
+.identity-grid{
+  width:204mm;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:100mm 100mm;
+  column-gap:4mm;
+  row-gap:4mm;
+  align-items:start;
+  justify-content:center;
+}
+.identity-grid-card{
+  width:100mm;
+  min-width:100mm;
+  background:#f4f3ef;
+  border-radius:3mm;
+  overflow:hidden;
+  align-self:start;
+}
+.identity-grid-card:last-child:nth-child(odd){
+  grid-column:1 / -1;
+  justify-self:center;
+}
+.identity-grid-image{
+  width:100mm;
+  height:100mm;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:3mm 3mm 0 0;
+  padding:2.5mm;
+}
+.identity-grid-image img{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  object-position:center;
+  display:block;
+}
+.identity-grid-placeholder{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  color:#aaa;
+  font-size:7pt;
+  border:1px dashed #d4d0c8;
+  border-radius:2mm;
+}
+.identity-grid-info{
+  min-height:12mm;
+  padding:2mm 3mm 2.4mm;
+  text-align:center;
+}
+.identity-grid-meta{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:2mm;
+  color:#8a857d;
+  font-size:4.8pt;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+}
+.identity-grid-meta span+span:before{
+  content:'•';
+  margin-right:2mm;
+  color:#bbb6ae;
+}
+.identity-grid-name{
+  margin-top:1.2mm;
+  font-size:9.5pt;
+  line-height:1.05;
+  font-weight:900;
+  word-break:break-word;
+}
+.identity-grid-location{
+  margin-top:1mm;
+  color:#6f6a63;
+  font-size:5.8pt;
+  line-height:1.1;
+}
+.identity-grid-location:before{
+  content:'LOCALIZAÇÃO  ';
+  color:#aaa49c;
+  font-size:4.8pt;
+  font-weight:900;
+  letter-spacing:.3px;
+}
+
+/* Regra global: assets cabem inteiros; só fundo/composição usa cover. */
+.cover-image-card img,
+.model-proof-image img,
+.identity-row-image img,
+.identity-grid-image img,
+.dropzone:not(.composition-dropzone) .drop-preview{
+  object-fit:contain;
+  object-position:center;
+}
+.composition-dropzone .drop-preview,
+.composition-piece-image img{
+  object-fit:cover;
+  object-position:center;
+}
