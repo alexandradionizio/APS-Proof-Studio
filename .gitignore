@@ -1,0 +1,21 @@
+# Dados locais / clientes
+*.apsproof
+*.pdf
+*.log
+.env
+.env.*
+private/
+client-data/
+backups/
+exports/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporários
+*.tmp
+*.bak
+*~
