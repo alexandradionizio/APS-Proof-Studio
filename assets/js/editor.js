@@ -16,11 +16,86 @@ function renderCompositionEditor(){
     $('#bottomSectionEditor').classList.toggle('is-hidden',!m.includeBottom);syncStaticDropzones();renderElementsEditor();
   }
   function renderElementGroup(scope){
-    const m=getActiveModel(),src=identitySource(m),isBottom=scope==='bottom',root=$(isBottom?'#bottomElementsEditor':'#topElementsEditor');if(!root||!src)return;const items=isBottom?src.bottomElements:src.elements,groups=isBottom?BOTTOM_LOCATION_GROUPS:TOP_LOCATION_GROUPS,target=isBottom?'bottomElementImage':'topElementImage';root.innerHTML='';
-    if(!items.length){root.innerHTML=`<div class="elements-empty">Nenhum item adicionado${isBottom?' na parte de baixo':' além do escudo'}.</div>`;return}
-    items.forEach(e=>{e.location=canonicalLocation(e.location||'');const item=document.createElement('div');item.className='element-item';item.innerHTML=`<div class="dropzone small ${e.image?'has-image':''}" data-target="${target}" data-id="${e.id}"><img class="drop-preview" ${e.image?`src="${e.image}"`:''} alt="Elemento"><div class="drop-placeholder"><b>+ Imagem</b></div></div><div class="element-fields"><select data-field="type">${typeOptions(e.type||'Patrocínio')}</select><input data-custom="type" class="custom-specify ${e.type==='Outro'?'':'is-hidden'}" placeholder="Especificar outro tipo (opcional)" value="${esc(e.customType||'')}"><input data-field="name" placeholder="Nome do item" value="${esc(e.name||'')}"><select data-field="location">${locationOptions(groups,e.location||'')}</select><input data-custom="location" class="custom-specify ${e.location==='Outro'?'':'is-hidden'}" placeholder="Especificar outra localização (opcional)" value="${esc(e.customLocation||'')}"><div class="item-bg-wrap"><div class="item-bg-label">Fundo da imagem</div><div class="item-bg-palette">${bgPaletteMarkup(e.bg,m)}</div></div></div><button class="icon-btn remove-element" title="Remover">×</button>`;
-      const ts=$('select[data-field="type"]',item),ls=$('select[data-field="location"]',item),ct=$('[data-custom="type"]',item),cl=$('[data-custom="location"]',item);ts.value=e.type||'Patrocínio';ls.value=e.location||'';
-      $('input[data-field="name"]',item).oninput=ev=>{e.name=ev.target.value;update()};ct.oninput=ev=>{e.customType=ev.target.value;update()};cl.oninput=ev=>{e.customLocation=ev.target.value;update()};ts.onchange=ev=>{e.type=ev.target.value;ct.classList.toggle('is-hidden',e.type!=='Outro');update()};ls.onchange=ev=>{e.location=ev.target.value;cl.classList.toggle('is-hidden',e.location!=='Outro');update()};bindBgPalette(item,bg=>{e.bg=bg;renderElementsEditor();update()});$('.remove-element',item).onclick=()=>{if(isBottom)src.bottomElements=src.bottomElements.filter(x=>x.id!==e.id);else src.elements=src.elements.filter(x=>x.id!==e.id);renderElementsEditor();update()};root.appendChild(item);
+    const m=getActiveModel(),
+      src=identitySource(m),
+      isBottom=scope==='bottom',
+      root=$(isBottom?'#bottomElementsEditor':'#topElementsEditor');
+
+    if(!root||!src)return;
+
+    const items=isBottom?src.bottomElements:src.elements,
+      groups=isBottom?BOTTOM_LOCATION_GROUPS:TOP_LOCATION_GROUPS,
+      target=isBottom?'bottomElementImage':'topElementImage';
+
+    root.innerHTML='';
+
+    if(!items.length){
+      root.innerHTML=`<div class="elements-empty">Nenhum item adicionado${isBottom?' na parte de baixo':' além do escudo'}.</div>`;
+      return;
+    }
+
+    const moveItem=(id,direction)=>{
+      const from=items.findIndex(x=>x.id===id);
+      const to=from+direction;
+      if(from<0||to<0||to>=items.length)return;
+      const [moved]=items.splice(from,1);
+      items.splice(to,0,moved);
+      renderElementsEditor();
+      update();
+    };
+
+    items.forEach((e,index)=>{
+      e.location=canonicalLocation(e.location||'');
+      const item=document.createElement('div');
+      item.className='element-item';
+      item.innerHTML=`
+        <div class="dropzone small ${e.image?'has-image':''}" data-target="${target}" data-id="${e.id}">
+          <img class="drop-preview" ${e.image?`src="${e.image}"`:''} alt="Elemento">
+          <div class="drop-placeholder"><b>+ Imagem</b></div>
+        </div>
+        <div class="element-fields">
+          <select data-field="type">${typeOptions(e.type||'Patrocínio')}</select>
+          <input data-custom="type" class="custom-specify ${e.type==='Outro'?'':'is-hidden'}" placeholder="Especificar outro tipo (opcional)" value="${esc(e.customType||'')}">
+          <input data-field="name" placeholder="Nome do item" value="${esc(e.name||'')}">
+          <select data-field="location">${locationOptions(groups,e.location||'')}</select>
+          <input data-custom="location" class="custom-specify ${e.location==='Outro'?'':'is-hidden'}" placeholder="Especificar outra localização (opcional)" value="${esc(e.customLocation||'')}">
+          <div class="item-bg-wrap">
+            <div class="item-bg-label">Fundo da imagem</div>
+            <div class="item-bg-palette">${bgPaletteMarkup(e.bg,m)}</div>
+          </div>
+        </div>
+        <div class="element-item-actions">
+          <button class="icon-btn element-order-btn move-up" title="Mover para cima" aria-label="Mover item para cima" ${index===0?'disabled':''}>↑</button>
+          <button class="icon-btn element-order-btn move-down" title="Mover para baixo" aria-label="Mover item para baixo" ${index===items.length-1?'disabled':''}>↓</button>
+          <button class="icon-btn remove-element" title="Remover" aria-label="Remover item">×</button>
+        </div>`;
+
+      const ts=$('select[data-field="type"]',item),
+        ls=$('select[data-field="location"]',item),
+        ct=$('[data-custom="type"]',item),
+        cl=$('[data-custom="location"]',item);
+
+      ts.value=e.type||'Patrocínio';
+      ls.value=e.location||'';
+
+      $('input[data-field="name"]',item).oninput=ev=>{e.name=ev.target.value;update()};
+      ct.oninput=ev=>{e.customType=ev.target.value;update()};
+      cl.oninput=ev=>{e.customLocation=ev.target.value;update()};
+      ts.onchange=ev=>{e.type=ev.target.value;ct.classList.toggle('is-hidden',e.type!=='Outro');update()};
+      ls.onchange=ev=>{e.location=ev.target.value;cl.classList.toggle('is-hidden',e.location!=='Outro');update()};
+
+      bindBgPalette(item,bg=>{e.bg=bg;renderElementsEditor();update()});
+
+      $('.move-up',item).onclick=()=>moveItem(e.id,-1);
+      $('.move-down',item).onclick=()=>moveItem(e.id,1);
+      $('.remove-element',item).onclick=()=>{
+        if(isBottom)src.bottomElements=src.bottomElements.filter(x=>x.id!==e.id);
+        else src.elements=src.elements.filter(x=>x.id!==e.id);
+        renderElementsEditor();
+        update();
+      };
+
+      root.appendChild(item);
     });
   }
   const renderElementsEditor=()=>{renderElementGroup('top');renderElementGroup('bottom')};
