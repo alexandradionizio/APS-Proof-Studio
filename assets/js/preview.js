@@ -26,11 +26,9 @@ function withTimeout(promise,ms,label='operação'){
 function selectedFontCount(){
   let count=0;
   for(const model of state.models){
+    if(typeof isOwnTypographyModel==='function'&&!isOwnTypographyModel(model))continue;
     for(const role of ['name','number']){
-      const selected=model[`${role}FontPostscript`]||model[`${role}FontFamily`]||
-        (model[`${role}FontFullName`]&&model[`${role}FontFullName`]!=='Fonte padrão do sistema'
-          ?model[`${role}FontFullName`]:'');
-      if(selected)count++;
+      if(typeof selectedFontToken==='function'?selectedFontToken(model,role):model[`${role}FontPostscript`])count++;
     }
   }
   return count;
