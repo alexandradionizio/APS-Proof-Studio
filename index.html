@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>APS Proof Studio</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="editor" id="editor">
+      <div class="brand-row">
+        <div class="brand-mark">APS</div>
+        <div>
+          <div class="brand-title">Proof Studio</div>
+          <div class="brand-sub">Versão pública • v0.17</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="printBtn">Gerar PDF</button>
+        <button class="btn" id="exportBtn">Salvar projeto</button>
+        <label class="btn file-btn">Abrir projeto<input id="importProjectInput" type="file" accept=".apsproof,.json" hidden></label>
+      </div>
+      <div class="save-note" id="saveNote">Salvamento automático local ativo</div>
+
+      <details open class="panel">
+        <summary>01 • Projeto</summary>
+        <div class="panel-body grid-2">
+          <label class="field span-2">Tipo de prova
+            <select id="modeInput">
+              <option value="art">Prova de Arte</option>
+              <option value="list">Prova de Lista</option>
+            </select>
+          </label>
+          <label class="field span-2">Nome do time / cliente
+            <input id="teamInput" type="text" placeholder="Ex.: Aurora FC">
+          </label>
+          <label class="field span-2">Subtítulo
+            <input id="subtitleInput" type="text">
+          </label>
+          <label class="field">Versão
+            <input id="versionInput" type="text" placeholder="V01">
+          </label>
+          <label class="field">Data
+            <input id="dateInput" type="date">
+          </label>
+          <label class="field span-2">Status
+            <select id="statusInput">
+              <option value="AGUARDANDO APROVAÇÃO">Aguardando aprovação</option>
+              <option value="EM AJUSTE">Em ajuste</option>
+              <option value="APROVADA">Aprovada</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details open class="panel art-only">
+        <summary>02 • Modelos do projeto</summary>
+        <div class="panel-body">
+          <div class="row-between">
+            <div>
+              <div class="section-mini-title">Mockups / variações</div>
+              <div class="identity-subtitle">Linha, goleiro, comissão, modelo 2 ou qualquer nome que você quiser.</div>
+            </div>
+            <button class="btn small-btn" id="addModelBtn">+ Adicionar modelo</button>
+          </div>
+          <div id="modelsEditor" class="models-editor"></div>
+        </div>
+      </details>
+
+      <details open class="panel art-only">
+        <summary>03 • Fundo & composição</summary>
+        <div class="panel-body">
+          <div class="model-selector-wrap">
+            <span class="label-like">Modelo em edição</span>
+            <select class="model-selector" id="compositionModelSelect"></select>
+          </div>
+
+          <label class="bottom-toggle mb-model-bottom">
+            <input id="includeBottomInput" type="checkbox">
+            <span><b>Incluir parte de baixo neste modelo</b><small>Ativa a arte do calção e os elementos da parte de baixo somente neste modelo.</small></span>
+          </label>
+
+          <div class="composition-source-block mt-10">
+            <div class="row-between">
+              <div>
+                <div class="section-mini-title">Parte de cima</div>
+                <div class="identity-subtitle">Camisa • proporção 60 × 78 cm</div>
+              </div>
+              <div class="composition-source-meta">300 × 390 px</div>
+            </div>
+            <div class="dropzone composition-dropzone shirt-ratio" data-target="compositionImage" id="compositionDropzone">
+              <img class="drop-preview" id="compositionEditorImage" alt="Fundo / composição da camisa">
+              <div class="drop-placeholder"><b>Arraste a arte completa da camisa</b><small>preenche sem esticar; pode cortar</small></div>
+              <div class="sample-hint">Clique na imagem para capturar a cor</div>
+            </div>
+          </div>
+
+          <div id="bottomCompositionEditor" class="composition-source-block composition-bottom-editor is-hidden">
+            <div class="row-between">
+              <div>
+                <div class="section-mini-title">Parte de baixo</div>
+                <div class="identity-subtitle">Calção • proporção 82 × 61 cm</div>
+              </div>
+              <div class="composition-source-meta">410 × 305 px</div>
+            </div>
+            <div class="dropzone composition-dropzone shorts-ratio" data-target="bottomCompositionImage" id="bottomCompositionDropzone">
+              <img class="drop-preview" id="bottomCompositionEditorImage" alt="Fundo / composição do calção">
+              <div class="drop-placeholder"><b>Arraste a arte completa do calção</b><small>preenche sem esticar; pode cortar</small></div>
+              <div class="sample-hint">Clique na imagem para capturar a cor</div>
+            </div>
+          </div>
+
+          <label class="field mt-12">Leitura visual / observações
+            <textarea id="compositionNotesInput" rows="4" placeholder="Ex.: base preta, textura geométrica vertical, filetes dourados..."></textarea>
+          </label>
+
+          <div class="row-between mt-14">
+            <div class="section-mini-title">Paleta de referência deste modelo</div>
+            <button class="btn small-btn" id="addColorBtn">+ Cor</button>
+          </div>
+          <div id="paletteEditor" class="palette-editor"></div>
+          <p class="microcopy">A paleta pertence ao modelo selecionado. Os botões 1 e 2 continuam definindo as cores do documento.</p>
+        </div>
+      </details>
+
+      <details open class="panel art-only">
+        <summary>04 • Identidade & elementos</summary>
+        <div class="panel-body">
+          <div class="model-selector-wrap">
+            <span class="label-like">Modelo em edição</span>
+            <select class="model-selector" id="identityModelSelect"></select>
+          </div>
+          <div id="identityInheritanceArea"></div>
+          <div id="identityCustomEditor">
+            <div class="identity-editor-section">
+              <div class="section-mini-title">Parte de cima</div>
+              <div class="identity-subtitle">Escudo principal</div>
+              <div class="element-editor crest-editor">
+                <div class="dropzone small" data-target="crestImage">
+                  <img class="drop-preview" alt="Escudo">
+                  <div class="drop-placeholder"><b>+ Escudo</b><small>arraste ou cole</small></div>
+                </div>
+                <div class="element-fields">
+                  <input id="crestNameInput" placeholder="Nome do escudo" value="Escudo">
+                  <select id="crestLocationInput" aria-label="Localização do escudo"></select>
+                  <input id="crestCustomLocationInput" class="custom-specify is-hidden" placeholder="Especificar outra localização (opcional)">
+                  <div class="item-bg-wrap">
+                    <div class="item-bg-label">Fundo da imagem</div>
+                    <div id="crestBgPalette" class="item-bg-palette"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="row-between mt-14">
+                <div class="identity-subtitle">Outros elementos</div>
+                <button class="btn small-btn" id="addTopElementBtn">+ Adicionar item</button>
+              </div>
+              <div id="topElementsEditor" class="elements-editor"></div>
+            </div>
+
+            <div id="bottomSectionEditor" class="identity-editor-section bottom-section-editor is-hidden">
+              <div class="row-between">
+                <div>
+                  <div class="section-mini-title">Parte de baixo</div>
+                  <div class="identity-subtitle">Elementos do calção</div>
+                </div>
+                <button class="btn small-btn" id="addBottomElementBtn">+ Adicionar item</button>
+              </div>
+              <div id="bottomElementsEditor" class="elements-editor"></div>
+              <p class="microcopy">O escudo principal não precisa ser repetido aqui. A numeração é configurada na aba própria.</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details open class="panel art-only">
+        <summary>05 • Nome & numeração</summary>
+        <div class="panel-body grid-2">
+          <div class="model-selector-wrap span-2">
+            <span class="label-like">Modelo em edição</span>
+            <select class="model-selector" id="typographyModelSelect"></select>
+          </div>
+          <div id="typographyInheritanceArea" class="span-2"></div>
+          <div id="typographyCustomEditor" class="span-2 grid-2">
+            <div class="field span-2">
+              <span class="label-like">Fontes instaladas no computador</span>
+              <button class="btn font-local-btn" id="loadLocalFontsBtn" type="button">Ler fontes do meu PC</button>
+              <div class="font-status" id="fontStatus">As fontes são usadas apenas localmente e não são enviadas para o sistema.</div>
+            </div>
+            <label class="field">Fonte do nome
+              <select id="nameFontSelect"><option value="">Fonte padrão do sistema</option></select>
+            </label>
+            <label class="field">Fonte do número
+              <select id="numberFontSelect"><option value="">Fonte padrão do sistema</option></select>
+            </label>
+            <label class="field span-2">Caracteres / nome
+              <textarea id="alphabetInput" rows="3"></textarea>
+            </label>
+            <label class="field span-2">Numeração
+              <input id="numbersInput" type="text">
+            </label>
+            <label class="field">Exemplo de nome
+              <input id="nameSampleInput" type="text">
+            </label>
+            <label class="field">Exemplo de número
+              <input id="numberSampleInput" type="text">
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <details open class="panel list-only">
+        <summary>02 • Lista de produção</summary>
+        <div class="panel-body">
+          <div class="row-between"><div class="section-mini-title">Itens da lista</div><button class="btn small-btn" id="addListRowBtn">+ Linha</button></div>
+          <div id="listEditor" class="list-editor"></div>
+          <button class="btn ghost full mt-10" id="pasteListBtn">Colar lista em texto</button>
+          <textarea id="pasteListArea" class="paste-area" rows="5" placeholder="Cole linhas no formato: Nome | Nº | Tamanho | Observação"></textarea>
+        </div>
+      </details>
+
+      <details open class="panel">
+        <summary><span class="art-only-inline">06</span><span class="list-only-inline">03</span> • Conferência final</summary>
+        <div class="panel-body">
+          <div class="section-mini-title">Checklist do documento</div>
+          <div id="checklistEditor" class="checklist-editor"></div>
+          <button class="btn small-btn mt-10" id="addChecklistBtn">+ Item</button>
+          <div class="divider"></div>
+          <label class="field">Aprovado por (opcional)<input id="approvedByInput" type="text" placeholder="Nome do responsável"></label>
+          <label class="field mt-8">Referência da aprovação<input id="approvalRefInput" type="text" placeholder="Ex.: WhatsApp / e-mail / pedido nº..."></label>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary>Tema do documento</summary>
+        <div class="panel-body grid-2">
+          <label class="field">Cor principal<input id="accentInput" type="color"></label>
+          <label class="field">Cor secundária<input id="accent2Input" type="color"></label>
+          <div class="span-2 theme-tip">As cores principal e secundária mudam as bordas, barras e selos do PDF.</div>
+        </div>
+      </details>
+
+      <div class="danger-zone">
+        <button class="btn ghost" id="loadSampleBtn">Carregar exemplo</button>
+        <button class="btn ghost danger" id="newProjectBtn">Novo projeto</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="preview-topbar">
+        <div>
+          <strong>Pré-visualização</strong>
+          <span id="pageCountLabel"></span>
+        </div>
+        <div class="preview-note">O PDF usa exatamente este layout A4.</div>
+      </div>
+      <div class="preview-wrap" id="previewWrap">
+        <div id="preview" class="preview"></div>
+      </div>
+    </main>
+  </div>
+  <input id="imagePicker" type="file" accept="image/*" hidden>
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
