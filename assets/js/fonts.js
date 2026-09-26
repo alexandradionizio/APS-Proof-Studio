@@ -1,4 +1,5 @@
 const loadedFontFaces=new Map();
+const fontTransferCache=new Map();
 
 function fontId(f){
   return f.postscriptName||`${f.family||''}|||${f.fullName||''}|||${f.style||''}`;
@@ -60,6 +61,58 @@ function populateFontSelectors(){
   xs.innerHTML=opts('number');
 }
 
+async function registerFontBlob(model,role,blob,identity=''){
+  if(!(blob instanceof Blob) || !model) return false;
+  const key=`${model.id}:${role}`;
+  const token=identity||model[`${role}FontPostscript`]||model[`${role}FontFullName`]||model[`${role}FontFamily`]||key;
+  const alias=`APS_${model.id.replace(/[^a-z0-9]/gi,'')}_${role}_${fontTokenHash(token)}`;
+
+  clearLoadedFont(key);
+
+  const buffer=await blob.arrayBuffer();
+  const face=new FontFace(alias,buffer);
+  await face.load();
+  document.fonts.add(face);
+  loadedFontFaces.set(key,face);
+  fontAliases.set(key,alias);
+  fontTransferCache.set(key,{blob,identity:token});
+
+  await document.fonts.load(`32px "${alias}"`);
+  await document.fonts.ready;
+  return true;
+}
+
+function getPreviewFontPayload(){
+  const payload=[];
+  for(const model of state.models){
+    for(const role of ['name','number']){
+      const key=`${model.id}:${role}`;
+      const cached=fontTransferCache.get(key);
+      if(cached?.blob instanceof Blob){
+        payload.push({
+          modelId:model.id,
+          role,
+          blob:cached.blob,
+          identity:cached.identity||''
+        });
+      }
+    }
+  }
+  return payload;
+}
+
+async function installPreviewFontPayload(payload=[]){
+  for(const item of payload){
+    const model=getModel(item?.modelId);
+    if(!model || !['name','number'].includes(item?.role) || !(item?.blob instanceof Blob)) continue;
+    try{
+      await registerFontBlob(model,item.role,item.blob,item.identity||'');
+    }catch(e){
+      console.warn('Falha ao receber fonte do painel',e);
+    }
+  }
+}
+
 async function loadFontFace(model,role){
   const ps=model[`${role}FontPostscript`]||'';
   const fam=model[`${role}FontFamily`]||'';
@@ -69,11 +122,17 @@ async function loadFontFace(model,role){
 
   if(!selectedToken){
     clearLoadedFont(key);
+    fontTransferCache.delete(key);
     try{if(db)await dbDelete(fontBlobKey(model,role))}catch{}
     return false;
   }
 
   try{
+    const memory=fontTransferCache.get(key);
+    if(memory?.blob instanceof Blob){
+      return await registerFontBlob(model,role,memory.blob,memory.identity||selectedToken);
+    }
+
     const item=
       localFonts.find(f=>ps&&fontId(f)===ps)||
       localFonts.find(f=>full&&f.fullName===full)||
@@ -81,12 +140,14 @@ async function loadFontFace(model,role){
 
     let blob=null;
     let cached=null;
+    let identity=selectedToken;
 
     if(item){
       blob=await item.blob();
+      identity=fontId(item)||selectedToken;
       cached={
         blob,
-        id:fontId(item),
+        id:identity,
         family:item.family||fam,
         fullName:item.fullName||full,
         postscriptName:item.postscriptName||ps
@@ -96,6 +157,7 @@ async function loadFontFace(model,role){
       try{if(db)cached=await dbGet(fontBlobKey(model,role))}catch{}
       if(cached instanceof Blob)blob=cached;
       else if(cached?.blob instanceof Blob)blob=cached.blob;
+      identity=cached?.id||selectedToken;
     }
 
     if(!blob){
@@ -103,28 +165,13 @@ async function loadFontFace(model,role){
       return false;
     }
 
-    const identity=ps||cached?.id||full||fam;
-    const alias=`APS_${model.id.replace(/[^a-z0-9]/gi,'')}_${role}_${fontTokenHash(identity)}`;
-
-    clearLoadedFont(key);
-
-    const buffer=await blob.arrayBuffer();
-    const face=new FontFace(alias,buffer);
-    await face.load();
-    document.fonts.add(face);
-    loadedFontFaces.set(key,face);
-    fontAliases.set(key,alias);
-
-    await document.fonts.load(`32px "${alias}"`);
-    await document.fonts.ready;
-    return true;
+    return await registerFontBlob(model,role,blob,identity);
   }catch(e){
     console.warn('Falha ao aplicar fonte local',e);
     clearLoadedFont(key);
     return false;
   }
 }
-
 async function applyAllSelectedFonts(){
   await Promise.all(state.models.flatMap(m=>[
     loadFontFace(m,'name'),
